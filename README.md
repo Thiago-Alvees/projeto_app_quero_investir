@@ -1,1 +1,0 @@
-# projeto_app_quero_investir
