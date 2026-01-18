@@ -16,11 +16,19 @@ import FiiCard from "../components/FiiCard";
 import type { DataSource } from "../../data/services/fiiService";
 import { getFiiList, isOk } from "../../data/services/fiiService";
 
+function formatUpdatedAt(iso?: string | null) {
+  if (!iso) return null;
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return null;
+  return d.toLocaleString("pt-BR");
+}
+
 export default function HomeScreen() {
   const [fiis, setFiis] = useState<Fii[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [source, setSource] = useState<DataSource>("MOCK");
+  const [updatedAt, setUpdatedAt] = useState<string | null>(null);
 
   async function load() {
     setLoading(true);
@@ -31,6 +39,7 @@ export default function HomeScreen() {
     if (isOk(result)) {
       setFiis(result.data);
       setSource(result.source);
+      setUpdatedAt(result.updatedAt ?? null);
     } else {
       setError(result.message);
     }
@@ -51,6 +60,7 @@ export default function HomeScreen() {
       if (isOk(result)) {
         setFiis(result.data);
         setSource(result.source);
+        setUpdatedAt(result.updatedAt ?? null);
       } else {
         setError(result.message);
       }
@@ -62,6 +72,8 @@ export default function HomeScreen() {
       active = false;
     };
   }, []);
+
+  const updatedAtLabel = formatUpdatedAt(updatedAt);
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -77,14 +89,16 @@ export default function HomeScreen() {
           </Pressable>
         </View>
 
-        {/* Banner de origem dos dados */}
         {!loading && !error && (
-          <View style={[styles.banner, source === "LIVE" ? styles.bannerLive : styles.bannerMock]}>
+          <View style={[styles.banner, source === "SNAPSHOT" ? styles.bannerSnapshot : styles.bannerMock]}>
             <Text style={styles.bannerText}>
-              {source === "LIVE"
-                ? "Dados ao vivo: preço atualizado via API"
-                : "Dados simulados: usando mock (API indisponível/limitada)"}
+              {source === "SNAPSHOT"
+                ? "Dados do dia: snapshot diário (preços consolidados)"
+                : "Dados simulados: usando mock (snapshot indisponível)"}
             </Text>
+            {updatedAtLabel && (
+              <Text style={styles.bannerSubText}>Atualizado em: {updatedAtLabel}</Text>
+            )}
           </View>
         )}
 
@@ -148,7 +162,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     borderWidth: 1,
   },
-  bannerLive: {
+  bannerSnapshot: {
     borderColor: "#0a7a0a",
     backgroundColor: "#eaf7ea",
   },
@@ -157,6 +171,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff4e5",
   },
   bannerText: { fontSize: 12, color: "#333" },
+  bannerSubText: { fontSize: 11, color: "#555", marginTop: 4 },
 
   list: { paddingTop: 12 },
 
