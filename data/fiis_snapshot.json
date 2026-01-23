@@ -1,26 +1,26 @@
 {
-  "generatedAt": "2026-01-22T21:35:35.463Z",
+  "generatedAt": "2026-01-23T21:33:59.986Z",
   "provider": "brapi",
   "items": [
     {
       "ticker": "HGLG11",
-      "price": 156.97
+      "price": 157.4
     },
     {
       "ticker": "XPLG11",
-      "price": 102.25
+      "price": 102.55
     },
     {
       "ticker": "VILG11",
-      "price": 101.53
+      "price": 102.85
     },
     {
       "ticker": "BTLG11",
-      "price": 102.5
+      "price": 102.7
     },
     {
       "ticker": "GGRC11",
-      "price": 9.98
+      "price": 10.03
     },
     {
       "ticker": "LOGG11",
@@ -28,11 +28,11 @@
     },
     {
       "ticker": "LVBI11",
-      "price": 111.29
+      "price": 111.89
     },
     {
       "ticker": "HSLG11",
-      "price": 91.3
+      "price": 91.41
     },
     {
       "ticker": "SARE11",
@@ -40,7 +40,7 @@
     },
     {
       "ticker": "BRCO11",
-      "price": 118.02
+      "price": 119.01
     },
     {
       "ticker": "PLOG11",
@@ -48,19 +48,19 @@
     },
     {
       "ticker": "RBRL11",
-      "price": 91.25
+      "price": 91.92
     },
     {
       "ticker": "VISC11",
-      "price": 109.1
+      "price": 109.78
     },
     {
       "ticker": "XPML11",
-      "price": 109.2
+      "price": 109.5
     },
     {
       "ticker": "HSML11",
-      "price": 91.01
+      "price": 91.62
     },
     {
       "ticker": "MALL11",
@@ -68,11 +68,11 @@
     },
     {
       "ticker": "FLRP11",
-      "price": 21.45
+      "price": 22.01
     },
     {
       "ticker": "HGBS11",
-      "price": 19.97
+      "price": 20.05
     },
     {
       "ticker": "TORD11",
@@ -80,39 +80,39 @@
     },
     {
       "ticker": "ABCP11",
-      "price": 81.89
+      "price": 81.78
     },
     {
       "ticker": "KNRI11",
-      "price": 162.5
+      "price": 163.06
     },
     {
       "ticker": "HGRE11",
-      "price": 124.6
+      "price": 126.81
     },
     {
       "ticker": "RCRB11",
-      "price": 142.72
+      "price": 141.72
     },
     {
       "ticker": "VINO11",
-      "price": 5.42
+      "price": 5.43
     },
     {
       "ticker": "BRCR11",
-      "price": 49.05
+      "price": 48.98
     },
     {
       "ticker": "PVBI11",
-      "price": 80.8
+      "price": 81.8
     },
     {
       "ticker": "JSRE11",
-      "price": 66.66
+      "price": 66.51
     },
     {
       "ticker": "AIEC11",
-      "price": 53.1
+      "price": 52.93
     },
     {
       "ticker": "MXRF11",
@@ -120,19 +120,19 @@
     },
     {
       "ticker": "CPTS11",
-      "price": 7.84
+      "price": 7.98
     },
     {
       "ticker": "KNCR11",
-      "price": 105.96
+      "price": 106.31
     },
     {
       "ticker": "KNSC11",
-      "price": 8.95
+      "price": 9.05
     },
     {
       "ticker": "RECR11",
-      "price": 81.7
+      "price": 82.03
     },
     {
       "ticker": "VGIR11",
@@ -140,7 +140,7 @@
     },
     {
       "ticker": "RBRR11",
-      "price": 88.42
+      "price": 89.95
     },
     {
       "ticker": "IRDM11",
@@ -148,19 +148,19 @@
     },
     {
       "ticker": "HCTR11",
-      "price": 22.66
+      "price": 23
     },
     {
       "ticker": "DEVA11",
-      "price": 26.71
+      "price": 27.35
     },
     {
       "ticker": "URPR11",
-      "price": 40
+      "price": 41
     },
     {
       "ticker": "VGHF11",
-      "price": 7.2
+      "price": 7.24
     },
     {
       "ticker": "BCFF11",
@@ -172,35 +172,35 @@
     },
     {
       "ticker": "HGRU11",
-      "price": 130
+      "price": 132.03
     },
     {
       "ticker": "RBVA11",
-      "price": 9.97
+      "price": 10.01
     },
     {
       "ticker": "RECT11",
-      "price": 38.97
+      "price": 39.17
     },
     {
       "ticker": "ALZR11",
-      "price": 10.7
+      "price": 10.72
     },
     {
       "ticker": "RBED11",
-      "price": 94.03
+      "price": null
     },
     {
       "ticker": "FIIB11",
-      "price": 475.02
+      "price": 477.98
     },
     {
       "ticker": "RZTR11",
-      "price": 97.35
+      "price": 97.46
     },
     {
       "ticker": "MORE11",
-      "price": 0
+      "price": null
     }
   ]
 }
