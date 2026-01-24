@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-01-23T21:33:59.986Z",
+  "generatedAt": "2026-01-24T23:00:39.554Z",
   "provider": "brapi",
   "items": [
     {
@@ -23,8 +23,8 @@
       "price": 10.03
     },
     {
-      "ticker": "LOGG11",
-      "price": null
+      "ticker": "GARE11",
+      "price": 8.82
     },
     {
       "ticker": "LVBI11",
@@ -43,8 +43,8 @@
       "price": 119.01
     },
     {
-      "ticker": "PLOG11",
-      "price": null
+      "ticker": "GLOG11",
+      "price": 65.01
     },
     {
       "ticker": "RBRL11",
@@ -63,8 +63,8 @@
       "price": 91.62
     },
     {
-      "ticker": "MALL11",
-      "price": null
+      "ticker": "PMLL11",
+      "price": 104.34
     },
     {
       "ticker": "FLRP11",
@@ -163,8 +163,8 @@
       "price": 7.24
     },
     {
-      "ticker": "BCFF11",
-      "price": null
+      "ticker": "BTHF11",
+      "price": 9.35
     },
     {
       "ticker": "RBRF11",
@@ -188,7 +188,7 @@
     },
     {
       "ticker": "RBED11",
-      "price": null
+      "price": 94.03
     },
     {
       "ticker": "FIIB11",
@@ -200,7 +200,7 @@
     },
     {
       "ticker": "MORE11",
-      "price": null
+      "price": 0
     }
   ]
 }
