@@ -1,5 +1,206 @@
 {
-  "generatedAt": null,
+  "generatedAt": "2026-01-23T21:33:59.986Z",
   "provider": "brapi",
-  "items": []
+  "items": [
+    {
+      "ticker": "HGLG11",
+      "price": 157.4
+    },
+    {
+      "ticker": "XPLG11",
+      "price": 102.55
+    },
+    {
+      "ticker": "VILG11",
+      "price": 102.85
+    },
+    {
+      "ticker": "BTLG11",
+      "price": 102.7
+    },
+    {
+      "ticker": "GGRC11",
+      "price": 10.03
+    },
+    {
+      "ticker": "LOGG11",
+      "price": null
+    },
+    {
+      "ticker": "LVBI11",
+      "price": 111.89
+    },
+    {
+      "ticker": "HSLG11",
+      "price": 91.41
+    },
+    {
+      "ticker": "SARE11",
+      "price": 4.75
+    },
+    {
+      "ticker": "BRCO11",
+      "price": 119.01
+    },
+    {
+      "ticker": "PLOG11",
+      "price": null
+    },
+    {
+      "ticker": "RBRL11",
+      "price": 91.92
+    },
+    {
+      "ticker": "VISC11",
+      "price": 109.78
+    },
+    {
+      "ticker": "XPML11",
+      "price": 109.5
+    },
+    {
+      "ticker": "HSML11",
+      "price": 91.62
+    },
+    {
+      "ticker": "MALL11",
+      "price": null
+    },
+    {
+      "ticker": "FLRP11",
+      "price": 22.01
+    },
+    {
+      "ticker": "HGBS11",
+      "price": 20.05
+    },
+    {
+      "ticker": "TORD11",
+      "price": 1.86
+    },
+    {
+      "ticker": "ABCP11",
+      "price": 81.78
+    },
+    {
+      "ticker": "KNRI11",
+      "price": 163.06
+    },
+    {
+      "ticker": "HGRE11",
+      "price": 126.81
+    },
+    {
+      "ticker": "RCRB11",
+      "price": 141.72
+    },
+    {
+      "ticker": "VINO11",
+      "price": 5.43
+    },
+    {
+      "ticker": "BRCR11",
+      "price": 48.98
+    },
+    {
+      "ticker": "PVBI11",
+      "price": 81.8
+    },
+    {
+      "ticker": "JSRE11",
+      "price": 66.51
+    },
+    {
+      "ticker": "AIEC11",
+      "price": 52.93
+    },
+    {
+      "ticker": "MXRF11",
+      "price": 9.5
+    },
+    {
+      "ticker": "CPTS11",
+      "price": 7.98
+    },
+    {
+      "ticker": "KNCR11",
+      "price": 106.31
+    },
+    {
+      "ticker": "KNSC11",
+      "price": 9.05
+    },
+    {
+      "ticker": "RECR11",
+      "price": 82.03
+    },
+    {
+      "ticker": "VGIR11",
+      "price": 9.81
+    },
+    {
+      "ticker": "RBRR11",
+      "price": 89.95
+    },
+    {
+      "ticker": "IRDM11",
+      "price": 58.5
+    },
+    {
+      "ticker": "HCTR11",
+      "price": 23
+    },
+    {
+      "ticker": "DEVA11",
+      "price": 27.35
+    },
+    {
+      "ticker": "URPR11",
+      "price": 41
+    },
+    {
+      "ticker": "VGHF11",
+      "price": 7.24
+    },
+    {
+      "ticker": "BCFF11",
+      "price": null
+    },
+    {
+      "ticker": "RBRF11",
+      "price": 6.65
+    },
+    {
+      "ticker": "HGRU11",
+      "price": 132.03
+    },
+    {
+      "ticker": "RBVA11",
+      "price": 10.01
+    },
+    {
+      "ticker": "RECT11",
+      "price": 39.17
+    },
+    {
+      "ticker": "ALZR11",
+      "price": 10.72
+    },
+    {
+      "ticker": "RBED11",
+      "price": null
+    },
+    {
+      "ticker": "FIIB11",
+      "price": 477.98
+    },
+    {
+      "ticker": "RZTR11",
+      "price": 97.46
+    },
+    {
+      "ticker": "MORE11",
+      "price": null
+    }
+  ]
 }
