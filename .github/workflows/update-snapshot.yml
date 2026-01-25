@@ -2,20 +2,19 @@ name: Update FIIs Snapshot
 
 on:
   schedule:
-    # 21:10 UTC = 18:10 no Brasil (Fortaleza, UTC-3)
-    # Segunda a sexta
+    # 21:10 UTC = 18:10 Fortaleza (UTC-3), seg-sex
     - cron: "10 21 * * 1-5"
   workflow_dispatch: {}
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   update:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
+      - name: Checkout private repo
         uses: actions/checkout@v4
 
       - name: Setup Node
@@ -23,16 +22,29 @@ jobs:
         with:
           node-version: "20"
 
-      - name: Generate snapshot
+      - name: Generate snapshot (private repo)
         env:
           BRAPI_TOKEN: ${{ secrets.BRAPI_TOKEN }}
         run: |
           node scripts/update_snapshot.mjs
 
-      - name: Commit changes (if any)
+      - name: Checkout public snapshot repo
+        uses: actions/checkout@v4
+        with:
+          repository: Thiago-Alvees/app_snapshot
+          token: ${{ secrets.SNAPSHOT_REPO_TOKEN }}
+          path: snapshot-repo
+
+      - name: Copy snapshot to public repo
         run: |
+          mkdir -p snapshot-repo/data
+          cp data/fiis_snapshot.json snapshot-repo/data/fiis_snapshot.json
+
+      - name: Commit and push to public repo
+        run: |
+          cd snapshot-repo
           git config user.name "snapshot-bot"
           git config user.email "snapshot-bot@users.noreply.github.com"
           git add data/fiis_snapshot.json
-          git diff --cached --quiet || git commit -m "chore(snapshot): update FIIs prices"
+          git diff --cached --quiet || git commit -m "chore(snapshot): update"
           git push

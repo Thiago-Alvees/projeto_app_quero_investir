@@ -7,20 +7,32 @@ import { computePvp } from "../../domain/rules/pvp";
 
 type Props = NativeStackScreenProps<RootStackParamList, "FiiDetail">;
 
+function formatUpdatedAt(iso?: string | null) {
+  if (!iso) return null;
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return null;
+  return d.toLocaleString("pt-BR");
+}
+
 export default function FiiDetailScreen({ route }: Props) {
-  const { fii } = route.params;
+  const { fii, updatedAt } = route.params;
 
   const pvp = computePvp(fii);
   const status = getValuationStatus(pvp);
   const message = getValuationMessage(status, fii.dividendYield12m);
+
+  const updatedAtLabel = formatUpdatedAt(updatedAt);
 
   return (
     <View style={styles.container}>
       <Text style={styles.ticker}>{fii.ticker}</Text>
       <Text style={styles.price}>R$ {fii.price.toFixed(2).replace(".", ",")}</Text>
 
-      <Text style={styles.status}>{status}</Text>
+      {updatedAtLabel && (
+        <Text style={styles.updatedAt}>Atualizado em: {updatedAtLabel}</Text>
+      )}
 
+      <Text style={styles.status}>{status}</Text>
       <Text style={styles.message}>{message}</Text>
 
       <View style={styles.block}>
@@ -32,7 +44,9 @@ export default function FiiDetailScreen({ route }: Props) {
 
         <Text>DY (12m): {fii.dividendYield12m.toFixed(1).replace(".", ",")}%</Text>
 
-        {typeof fii.pl === "number" && <Text>P/L: {fii.pl.toFixed(1).replace(".", ",")}</Text>}
+        {typeof fii.pl === "number" && (
+          <Text>P/L: {fii.pl.toFixed(1).replace(".", ",")}</Text>
+        )}
       </View>
 
       <Text style={styles.disclaimer}>
@@ -46,6 +60,9 @@ const styles = StyleSheet.create({
   container: { flex: 1, padding: 16 },
   ticker: { fontSize: 26, fontWeight: "800" },
   price: { fontSize: 18, marginVertical: 4 },
+
+  updatedAt: { fontSize: 12, color: "#555", marginTop: 2 },
+
   status: { fontSize: 16, fontWeight: "700", marginVertical: 8 },
   message: { fontSize: 14, marginBottom: 16 },
   block: { gap: 6 },

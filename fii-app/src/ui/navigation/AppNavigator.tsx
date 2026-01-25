@@ -8,8 +8,9 @@ import type { Fii } from "../../domain/models/fii";
 
 export type RootStackParamList = {
   Home: undefined;
-  FiiDetail: { fii: Fii };
+  FiiDetail: { fii: import("../../domain/models/fii").Fii; updatedAt?: string | null };
 };
+
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 

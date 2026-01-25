@@ -124,7 +124,7 @@ export default function HomeScreen() {
           <FlatList
             data={fiis}
             keyExtractor={(item) => item.ticker}
-            renderItem={({ item }) => <FiiCard fii={item} />}
+            renderItem={({ item }) => <FiiCard fii={item} updatedAt={updatedAt} />}
             contentContainerStyle={styles.list}
           />
         )}

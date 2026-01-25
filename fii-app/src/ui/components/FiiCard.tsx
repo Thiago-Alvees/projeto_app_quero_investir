@@ -7,10 +7,10 @@ import { computePvp } from "../../domain/rules/pvp";
 
 type Props = {
   fii: Fii;
-  onPress?: () => void;
+  updatedAt?: string | null; // <- NOVO
 };
 
-export default function FiiCard({ fii }: Props) {
+export default function FiiCard({ fii, updatedAt }: Props) {
   const navigation = useNavigation<any>();
 
   const pvp = computePvp(fii);
@@ -18,14 +18,12 @@ export default function FiiCard({ fii }: Props) {
 
   return (
     <Pressable
-      onPress={() => navigation.navigate("FiiDetail", { fii })}
+      onPress={() => navigation.navigate("FiiDetail", { fii, updatedAt })}
       style={styles.card}
     >
       <View style={styles.row}>
         <Text style={styles.ticker}>{fii.ticker}</Text>
-        <Text style={styles.price}>
-          R$ {fii.price.toFixed(2).replace(".", ",")}
-        </Text>
+        <Text style={styles.price}>R$ {fii.price.toFixed(2).replace(".", ",")}</Text>
       </View>
 
       <View style={styles.row}>
@@ -35,9 +33,7 @@ export default function FiiCard({ fii }: Props) {
 
       <View style={styles.row}>
         <Text style={styles.meta}>P/VP: {pvp.toFixed(2).replace(".", ",")}</Text>
-        <Text style={styles.meta}>
-          DY (12m): {fii.dividendYield12m.toFixed(1).replace(".", ",")}%
-        </Text>
+        <Text style={styles.meta}>DY (12m): {fii.dividendYield12m.toFixed(1).replace(".", ",")}%</Text>
       </View>
     </Pressable>
   );

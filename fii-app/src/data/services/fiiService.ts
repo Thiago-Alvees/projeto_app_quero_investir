@@ -23,7 +23,8 @@ type Snapshot = {
 // Exemplo:
 // https://raw.githubusercontent.com/Thiago-Alvees/projeto_app_quero_investir/main/data/fiis_snapshot.json
 const SNAPSHOT_URL =
-  "https://github.com/Thiago-Alvees/projeto_app_quero_investir/blob/main/fii-app/data/fiis_snapshot.json";
+  "https://raw.githubusercontent.com/Thiago-Alvees/app_snapshot/main/data/fiis_snapshot.json";
+
 
 async function fetchSnapshot(): Promise<Snapshot> {
   const res = await fetch(SNAPSHOT_URL);
