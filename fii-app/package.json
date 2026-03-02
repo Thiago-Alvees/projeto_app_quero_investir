@@ -6,12 +6,19 @@
     "start": "expo start",
     "android": "expo start --android",
     "ios": "expo start --ios",
-    "web": "expo start --web"
+    "web": "expo start --web",
+    "cvm:fundamentals": "node ../scripts/cvm-fundamentals.js",
+    "validate:supabase": "node scripts/validate-supabase.mjs",
+    "test": "tsx --test src/domain/rules/pvp.test.ts src/domain/rules/valuation.test.ts src/domain/rules/marketValuation.test.ts src/domain/rules/portfolioSimulator.test.ts"
   },
   "dependencies": {
+    "@expo/vector-icons": "^15.0.3",
+    "@react-native-async-storage/async-storage": "2.2.0",
+    "@react-navigation/bottom-tabs": "^7.15.2",
     "@react-navigation/native": "^7.1.28",
     "@react-navigation/native-stack": "^7.10.0",
-    "expo": "~54.0.31",
+    "@supabase/supabase-js": "^2.98.0",
+    "expo": "~54.0.33",
     "expo-constants": "~18.0.13",
     "expo-status-bar": "~3.0.9",
     "react": "19.1.0",
@@ -23,6 +30,8 @@
   "devDependencies": {
     "@types/react": "~19.1.10",
     "@types/react-native": "^0.72.8",
+    "babel-preset-expo": "~54.0.10",
+    "tsx": "^4.21.0",
     "typescript": "~5.9.2"
   }
 }

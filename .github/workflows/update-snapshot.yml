@@ -28,6 +28,10 @@ jobs:
         run: |
           node scripts/update_snapshot.mjs
 
+      - name: Generate fundamentals (private repo)
+        run: |
+          node scripts/cvm-fundamentals.js --out data/fiis_fundamentals.json
+
       - name: Checkout public snapshot repo
         uses: actions/checkout@v4
         with:
@@ -39,12 +43,13 @@ jobs:
         run: |
           mkdir -p snapshot-repo/data
           cp data/fiis_snapshot.json snapshot-repo/data/fiis_snapshot.json
+          cp data/fiis_fundamentals.json snapshot-repo/data/fiis_fundamentals.json
 
       - name: Commit and push to public repo
         run: |
           cd snapshot-repo
           git config user.name "snapshot-bot"
           git config user.email "snapshot-bot@users.noreply.github.com"
-          git add data/fiis_snapshot.json
+          git add data/fiis_snapshot.json data/fiis_fundamentals.json
           git diff --cached --quiet || git commit -m "chore(snapshot): update"
           git push

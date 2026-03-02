@@ -2,7 +2,14 @@ import type { Fii } from "../models/fii";
 
 export function computePvp(fii: Fii): number {
   // Prioridade 1: se temos VP, calculamos dinamicamente
-  if (typeof fii.vp === "number" && Number.isFinite(fii.vp) && fii.vp > 0) {
+  if (
+    typeof fii.price === "number" &&
+    Number.isFinite(fii.price) &&
+    fii.price > 0 &&
+    typeof fii.vp === "number" &&
+    Number.isFinite(fii.vp) &&
+    fii.vp > 0
+  ) {
     return fii.price / fii.vp;
   }
 
@@ -11,6 +18,6 @@ export function computePvp(fii: Fii): number {
     return fii.pvp;
   }
 
-  // Fallback final para não quebrar UI/regra
-  return 1;
+  // Sem dados suficientes para calcular
+  return Number.NaN;
 }

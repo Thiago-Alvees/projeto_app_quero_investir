@@ -1,0 +1,300 @@
+{
+  "updatedAt": "2026-01-01",
+  "source": "CVM - INF_MENSAL FII (complemento)",
+  "items": [
+    {
+      "ticker": "ABCP11",
+      "vp": 110.796095967324,
+      "dy12m": 6.974600000000001,
+      "dyStatus": "OK"
+    },
+    {
+      "ticker": "AIEC11",
+      "vp": 34.2980568804469,
+      "dy12m": 2.5715000000000003,
+      "dyStatus": "OK"
+    },
+    {
+      "ticker": "ALZR11",
+      "vp": 10.64067,
+      "dy12m": 9.1998,
+      "dyStatus": "OK"
+    },
+    {
+      "ticker": "BRCO11",
+      "vp": 116.395681827107,
+      "dy12m": 8.999400000000001,
+      "dyStatus": "OK"
+    },
+    {
+      "ticker": "BRCR11",
+      "vp": 98.6178909926881,
+      "dy12m": 6.0026,
+      "dyStatus": "OK"
+    },
+    {
+      "ticker": "BTHF11",
+      "vp": 13.56699715,
+      "dy12m": 9.965418000000001,
+      "dyStatus": "OK"
+    },
+    {
+      "ticker": "BTLG11",
+      "vp": 0.913126257357631,
+      "dy12m": 7.9823,
+      "dyStatus": "OK"
+    },
+    {
+      "ticker": "CPTS11",
+      "vp": 9.180572,
+      "dy12m": 11.761199999999999,
+      "dyStatus": "OK"
+    },
+    {
+      "ticker": "DEVA11",
+      "vp": 14.442831299041,
+      "dy12m": 11.2842,
+      "dyStatus": "OK"
+    },
+    {
+      "ticker": "FIIB11",
+      "vp": 590.951339547445,
+      "dy12m": 9.389700000000001,
+      "dyStatus": "OK"
+    },
+    {
+      "ticker": "FLRP11",
+      "vp": 21.0812522143353,
+      "dy12m": 8.463999999999999,
+      "dyStatus": "OK"
+    },
+    {
+      "ticker": "GARE11",
+      "vp": 1.02509141931225,
+      "dy12m": 0,
+      "dyStatus": "OK"
+    },
+    {
+      "ticker": "GGRC11",
+      "vp": 11.2205010567951,
+      "dy12m": 0,
+      "dyStatus": "OK"
+    },
+    {
+      "ticker": "GLOG11",
+      "vp": 0.913126257357631,
+      "dy12m": 7.9823,
+      "dyStatus": "OK"
+    },
+    {
+      "ticker": "HCTR11",
+      "vp": 105.74291767,
+      "dy12m": 3.9666300000000003,
+      "dyStatus": "OK"
+    },
+    {
+      "ticker": "HGBS11",
+      "vp": 13.5746041761557,
+      "dy12m": 0,
+      "dyStatus": "OK"
+    },
+    {
+      "ticker": "HGLG11",
+      "vp": 105.50131334,
+      "dy12m": 9.211443999999998,
+      "dyStatus": "OK"
+    },
+    {
+      "ticker": "HGRE11",
+      "vp": 75.6018336456809,
+      "dy12m": 11.4393,
+      "dyStatus": "OK"
+    },
+    {
+      "ticker": "HGRU11",
+      "vp": 82.342051361186,
+      "dy12m": 3.1926,
+      "dyStatus": "OK"
+    },
+    {
+      "ticker": "HSLG11",
+      "vp": 0.913126257357631,
+      "dy12m": 7.9823,
+      "dyStatus": "OK"
+    },
+    {
+      "ticker": "HSML11",
+      "vp": 104.830473090546,
+      "dy12m": 7.513299999999999,
+      "dyStatus": "OK"
+    },
+    {
+      "ticker": "IRDM11",
+      "vp": 14.442831299041,
+      "dy12m": 11.2842,
+      "dyStatus": "OK"
+    },
+    {
+      "ticker": "JSRE11",
+      "vp": 105.875456418852,
+      "dy12m": 5.6492,
+      "dyStatus": "OK"
+    },
+    {
+      "ticker": "KNCR11",
+      "vp": 102.256032068581,
+      "dy12m": 14.1428,
+      "dyStatus": "OK"
+    },
+    {
+      "ticker": "KNRI11",
+      "vp": 163.198051576783,
+      "dy12m": 7.5473,
+      "dyStatus": "OK"
+    },
+    {
+      "ticker": "KNSC11",
+      "vp": 8.79853404375028,
+      "dy12m": 13.145100000000001,
+      "dyStatus": "OK"
+    },
+    {
+      "ticker": "LVBI11",
+      "vp": 92.6538817203941,
+      "dy12m": 12.886000000000003,
+      "dyStatus": "OK"
+    },
+    {
+      "ticker": "MORE11",
+      "vp": 90.69755,
+      "dy12m": 11.743782999999999,
+      "dyStatus": "OK"
+    },
+    {
+      "ticker": "MXRF11",
+      "vp": 9.409927,
+      "dy12m": 12.381,
+      "dyStatus": "OK"
+    },
+    {
+      "ticker": "PMLL11",
+      "vp": 117.315216490836,
+      "dy12m": 8.3827,
+      "dyStatus": "OK"
+    },
+    {
+      "ticker": "PVBI11",
+      "vp": 92.6538817203941,
+      "dy12m": 12.886000000000003,
+      "dyStatus": "OK"
+    },
+    {
+      "ticker": "RBRF11",
+      "vp": 8.571181,
+      "dy12m": null,
+      "dyStatus": "APURACAO"
+    },
+    {
+      "ticker": "RBRL11",
+      "vp": 0.913126257357631,
+      "dy12m": 7.9823,
+      "dyStatus": "OK"
+    },
+    {
+      "ticker": "RBRR11",
+      "vp": 93.606956,
+      "dy12m": 2.4255,
+      "dyStatus": "OK"
+    },
+    {
+      "ticker": "RBVA11",
+      "vp": 10.7616917187797,
+      "dy12m": 10.158099999999997,
+      "dyStatus": "OK"
+    },
+    {
+      "ticker": "RCRB11",
+      "vp": 199.327539447177,
+      "dy12m": 5.421300000000001,
+      "dyStatus": "OK"
+    },
+    {
+      "ticker": "RECR11",
+      "vp": 88.9581897737093,
+      "dy12m": 12.840499999999999,
+      "dyStatus": "OK"
+    },
+    {
+      "ticker": "RECT11",
+      "vp": 89.6844183860161,
+      "dy12m": 4.817899999999999,
+      "dyStatus": "OK"
+    },
+    {
+      "ticker": "RZTR11",
+      "vp": 94.6225000763856,
+      "dy12m": 12.5869,
+      "dyStatus": "OK"
+    },
+    {
+      "ticker": "SARE11",
+      "vp": 5.03464706769707,
+      "dy12m": null,
+      "dyStatus": "APURACAO"
+    },
+    {
+      "ticker": "TORD11",
+      "vp": 36.71829414,
+      "dy12m": 0.45762299999999995,
+      "dyStatus": "OK"
+    },
+    {
+      "ticker": "URPR11",
+      "vp": 103.25573542,
+      "dy12m": 6.273945,
+      "dyStatus": "OK"
+    },
+    {
+      "ticker": "VGHF11",
+      "vp": 8.669788,
+      "dy12m": 11.996044,
+      "dyStatus": "OK"
+    },
+    {
+      "ticker": "VGIR11",
+      "vp": 105.287458757732,
+      "dy12m": null,
+      "dyStatus": "APURACAO"
+    },
+    {
+      "ticker": "VILG11",
+      "vp": 113.281743764051,
+      "dy12m": 7.4444,
+      "dyStatus": "OK"
+    },
+    {
+      "ticker": "VINO11",
+      "vp": 9.85576611606254,
+      "dy12m": 6.215,
+      "dyStatus": "OK"
+    },
+    {
+      "ticker": "VISC11",
+      "vp": 117.989721647986,
+      "dy12m": 7.8035000000000005,
+      "dyStatus": "OK"
+    },
+    {
+      "ticker": "XPLG11",
+      "vp": 105.50131334,
+      "dy12m": 9.211443999999998,
+      "dyStatus": "OK"
+    },
+    {
+      "ticker": "XPML11",
+      "vp": 108.160447,
+      "dy12m": 10.009799999999998,
+      "dyStatus": "OK"
+    }
+  ]
+}
