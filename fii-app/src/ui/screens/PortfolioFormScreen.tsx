@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import {
+  ActivityIndicator,
   Alert,
   Pressable,
   ScrollView,
@@ -22,6 +23,7 @@ import type { PortfolioVisibility } from "../../domain/models/portfolio";
 import type { RootStackParamList } from "../navigation/AppNavigator";
 import { useInvestmentCatalog } from "../hooks/useInvestmentCatalog";
 import { formatCurrencyBRL, formatDecimalBR } from "../utils/format";
+import { getSupabaseSessionUser } from "../../data/services/supabase/client";
 
 type Props = NativeStackScreenProps<RootStackParamList, "PortfolioForm">;
 
@@ -68,11 +70,29 @@ export default function PortfolioFormScreen({ navigation, route }: Props) {
   const [reinvestDividends, setReinvestDividends] = useState(true);
   const [assetFilter, setAssetFilter] = useState<AssetClassFilter>("ALL");
   const [selectedAssetKeys, setSelectedAssetKeys] = useState<Set<string>>(new Set());
+  const [authChecking, setAuthChecking] = useState(true);
+  const [hasAccountSession, setHasAccountSession] = useState(false);
   const [loadingExisting, setLoadingExisting] = useState(false);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    if (!portfolioId) return;
+    let active = true;
+    (async () => {
+      const sessionUser = await getSupabaseSessionUser();
+      if (!active) return;
+      const loggedWithAccount = Boolean(
+        sessionUser && !sessionUser.isAnonymous && sessionUser.email
+      );
+      setHasAccountSession(loggedWithAccount);
+      setAuthChecking(false);
+    })();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!portfolioId || !hasAccountSession || authChecking) return;
 
     let active = true;
     setLoadingExisting(true);
@@ -96,7 +116,7 @@ export default function PortfolioFormScreen({ navigation, route }: Props) {
     return () => {
       active = false;
     };
-  }, [portfolioId]);
+  }, [portfolioId, hasAccountSession, authChecking]);
 
   const filteredAssets = useMemo(() => {
     if (assetFilter === "ALL") return catalogItems;
@@ -131,6 +151,11 @@ export default function PortfolioFormScreen({ navigation, route }: Props) {
   }
 
   async function handleSave() {
+    if (!hasAccountSession) {
+      Alert.alert("Login necessário", "Entre com uma conta para criar ou editar carteiras.");
+      return;
+    }
+
     const monthlyValue = parseCurrencyInput(monthlyContributionInput);
     const monthsValue = parseCurrencyInput(monthsInput);
 
@@ -152,23 +177,61 @@ export default function PortfolioFormScreen({ navigation, route }: Props) {
     }
 
     setSaving(true);
-    await savePortfolio({
-      id: portfolioId ?? undefined,
-      name: name.trim(),
-      visibility,
-      monthlyContribution: monthlyValue,
-      months: Math.max(1, Math.floor(monthsValue)),
-      reinvestDividends,
-      assets: Array.from(selectedAssetKeys).map((value) => {
-        const [assetClass, ticker] = value.split(":");
-        return {
-          assetClass: assetClass as "FII" | "STOCK" | "ETF",
-          ticker,
-        };
-      }),
-    });
-    setSaving(false);
-    navigation.goBack();
+    try {
+      await savePortfolio({
+        id: portfolioId ?? undefined,
+        name: name.trim(),
+        visibility,
+        monthlyContribution: monthlyValue,
+        months: Math.max(1, Math.floor(monthsValue)),
+        reinvestDividends,
+        assets: Array.from(selectedAssetKeys).map((value) => {
+          const [assetClass, ticker] = value.split(":");
+          return {
+            assetClass: assetClass as "FII" | "STOCK" | "ETF",
+            ticker,
+          };
+        }),
+      });
+      navigation.goBack();
+    } catch (error) {
+      Alert.alert(
+        "Falha ao salvar",
+        error instanceof Error ? error.message : "Não foi possível salvar a carteira agora."
+      );
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  if (authChecking) {
+    return (
+      <SafeAreaView edges={["top"]} style={styles.safe}>
+        <View style={styles.center}>
+          <ActivityIndicator />
+          <Text style={styles.helper}>Validando sessão...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (!hasAccountSession) {
+    return (
+      <SafeAreaView edges={["top"]} style={styles.safe}>
+        <View style={styles.gateContainer}>
+          <Text style={styles.title}>Conta necessária</Text>
+          <Text style={styles.subtitle}>
+            Para criar, editar e simular carteiras, faça login ou crie sua conta.
+          </Text>
+          <Pressable
+            onPress={() => navigation.navigate("MainTabs", { screen: "AccountTab" })}
+            style={styles.primaryBtn}
+          >
+            <Text style={styles.primaryBtnText}>Ir para Conta</Text>
+          </Pressable>
+        </View>
+      </SafeAreaView>
+    );
   }
 
   return (
@@ -180,7 +243,7 @@ export default function PortfolioFormScreen({ navigation, route }: Props) {
         </Text>
 
         <Text style={styles.helper}>
-          Base de ativos: {source === "LIVE" ? "atualizada" : "fallback local"}
+          Base de ativos: {source === "SNAPSHOT" ? "snapshot curado" : "fallback local"}
           {updatedAt ? ` | ${new Date(updatedAt).toLocaleString("pt-BR")}` : ""}
         </Text>
         <Text style={styles.helper}>
@@ -340,6 +403,19 @@ export default function PortfolioFormScreen({ navigation, route }: Props) {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: "#fff" },
+  center: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    padding: 16,
+  },
+  gateContainer: {
+    flex: 1,
+    padding: 16,
+    justifyContent: "center",
+    gap: 10,
+  },
   container: {
     padding: 16,
     gap: 8,

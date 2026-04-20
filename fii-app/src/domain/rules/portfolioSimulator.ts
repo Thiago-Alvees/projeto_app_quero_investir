@@ -4,6 +4,7 @@ import type {
   InvestmentPortfolio,
   PortfolioProjection,
   PortfolioProjectionItem,
+  PortfolioTimelinePoint,
 } from "../models/portfolio";
 import {
   simulateFiiRecurringContribution,
@@ -119,4 +120,79 @@ export function simulatePortfolio(
     monthlyIncomeAtEnd: round2(monthlyIncomeAtEnd),
     items,
   };
+}
+
+function toMonthlyRate(annualRate: number): number {
+  if (!Number.isFinite(annualRate) || annualRate <= -100) return 0;
+  return Math.pow(1 + annualRate / 100, 1 / 12) - 1;
+}
+
+function toMonthlyDy(dyAnnual: number): number {
+  if (!Number.isFinite(dyAnnual) || dyAnnual <= 0) return 0;
+  return dyAnnual / 100 / 12;
+}
+
+export function simulatePortfolioTimeline(
+  portfolio: InvestmentPortfolio,
+  catalogByKey: Map<string, PortfolioAssetCatalogItem> = INVESTMENT_CATALOG_BY_KEY
+): PortfolioTimelinePoint[] {
+  if (!portfolio.assets.length) return [];
+  if (!Number.isFinite(portfolio.monthlyContribution) || portfolio.monthlyContribution <= 0) {
+    return [];
+  }
+  if (!Number.isFinite(portfolio.months) || portfolio.months <= 0) return [];
+
+  const months = Math.max(1, Math.floor(portfolio.months));
+  const perAssetContribution = portfolio.monthlyContribution / portfolio.assets.length;
+
+  const assetStates = portfolio.assets
+    .map((asset) => {
+      const catalogItem = catalogByKey.get(toAssetKey(asset.assetClass, asset.ticker));
+      if (!catalogItem) return null;
+      return {
+        assetClass: asset.assetClass,
+        monthlyRate: toMonthlyRate(catalogItem.expectedAnnualReturn),
+        monthlyDy: toMonthlyDy(catalogItem.dividendYield12m),
+        value: 0,
+      };
+    })
+    .filter(Boolean) as Array<{
+    assetClass: "FII" | "STOCK" | "ETF";
+    monthlyRate: number;
+    monthlyDy: number;
+    value: number;
+  }>;
+
+  if (!assetStates.length) return [];
+
+  const timeline: PortfolioTimelinePoint[] = [];
+  let investedTotal = 0;
+
+  for (let month = 1; month <= months; month += 1) {
+    let portfolioValue = 0;
+    let monthIncome = 0;
+    investedTotal += portfolio.monthlyContribution;
+
+    for (const state of assetStates) {
+      const growth = state.value * state.monthlyRate;
+      const income = state.value * state.monthlyDy;
+
+      state.value += perAssetContribution + growth;
+      if (portfolio.reinvestDividends) {
+        state.value += income;
+      }
+
+      portfolioValue += state.value;
+      monthIncome += income;
+    }
+
+    timeline.push({
+      month,
+      invested: round2(investedTotal),
+      estimatedValue: round2(portfolioValue),
+      estimatedIncome: round2(monthIncome),
+    });
+  }
+
+  return timeline;
 }

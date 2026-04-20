@@ -15,6 +15,19 @@ function jsonResponse(status: number, payload: Record<string, unknown>) {
   });
 }
 
+function parseJwtPayload(token: string): Record<string, unknown> | null {
+  try {
+    const [, payload] = token.split(".");
+    if (!payload) return null;
+
+    const normalized = payload.replace(/-/g, "+").replace(/_/g, "/");
+    const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, "=");
+    return JSON.parse(atob(padded)) as Record<string, unknown>;
+  } catch {
+    return null;
+  }
+}
+
 Deno.serve(async (request) => {
   if (request.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -35,6 +48,15 @@ Deno.serve(async (request) => {
 
   if (!authorization) {
     return jsonResponse(401, { error: "Missing Authorization header" });
+  }
+
+  const accessToken = authorization.replace(/^Bearer\s+/i, "").trim();
+  const accessTokenPayload = parseJwtPayload(accessToken);
+  const issuedAt = Number(accessTokenPayload?.iat ?? 0);
+  const sessionAgeSeconds = Math.floor(Date.now() / 1000) - issuedAt;
+
+  if (!Number.isFinite(issuedAt) || sessionAgeSeconds > 5 * 60) {
+    return jsonResponse(403, { error: "Recent reauthentication required" });
   }
 
   const body = await request.json().catch(() => ({}));

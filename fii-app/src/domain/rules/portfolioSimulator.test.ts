@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { simulatePortfolio } from "./portfolioSimulator";
+import { simulatePortfolio, simulatePortfolioTimeline } from "./portfolioSimulator";
 
 test("simulatePortfolio returns aggregated projection for selected assets", () => {
   const projection = simulatePortfolio({
@@ -40,3 +40,21 @@ test("simulatePortfolio returns null when no assets are selected", () => {
   assert.equal(projection, null);
 });
 
+test("simulatePortfolioTimeline returns monthly progression", () => {
+  const timeline = simulatePortfolioTimeline({
+    id: "p3",
+    name: "Linha do tempo",
+    visibility: "PRIVADA",
+    monthlyContribution: 1000,
+    months: 6,
+    reinvestDividends: true,
+    assets: [{ assetClass: "FII", ticker: "HGLG11" }],
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  });
+
+  assert.equal(timeline.length, 6);
+  assert.equal(timeline[0].month, 1);
+  assert.ok(timeline[5].invested >= 6000);
+  assert.ok(timeline[5].estimatedValue >= timeline[5].invested);
+});

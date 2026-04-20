@@ -9,7 +9,11 @@
     "web": "expo start --web",
     "cvm:fundamentals": "node ../scripts/cvm-fundamentals.js",
     "validate:supabase": "node scripts/validate-supabase.mjs",
-    "test": "tsx --test src/domain/rules/pvp.test.ts src/domain/rules/valuation.test.ts src/domain/rules/marketValuation.test.ts src/domain/rules/portfolioSimulator.test.ts"
+    "test": "tsx --test src/domain/rules/pvp.test.ts src/domain/rules/valuation.test.ts src/domain/rules/marketValuation.test.ts src/domain/rules/portfolioSimulator.test.ts src/domain/rules/dividendCalendar.test.ts",
+    "lint": "eslint . --ext .js,.mjs,.ts,.tsx",
+    "typecheck": "tsc --noEmit",
+    "data:market:snapshot": "node ../scripts/update_market_snapshot.mjs",
+    "data:market:fundamentals": "node ../scripts/update_market_fundamentals.mjs"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.3",
@@ -19,8 +23,11 @@
     "@react-navigation/native-stack": "^7.10.0",
     "@supabase/supabase-js": "^2.98.0",
     "expo": "~54.0.33",
+    "expo-auth-session": "~7.0.10",
     "expo-constants": "~18.0.13",
+    "expo-notifications": "~0.32.16",
     "expo-status-bar": "~3.0.9",
+    "expo-web-browser": "~15.0.10",
     "react": "19.1.0",
     "react-native": "0.81.5",
     "react-native-safe-area-context": "~5.6.0",
@@ -28,9 +35,14 @@
   },
   "private": true,
   "devDependencies": {
+    "@eslint/js": "^9.39.4",
     "@types/react": "~19.1.10",
     "@types/react-native": "^0.72.8",
+    "@typescript-eslint/eslint-plugin": "^8.58.1",
+    "@typescript-eslint/parser": "^8.58.1",
     "babel-preset-expo": "~54.0.10",
+    "eslint": "^9.39.4",
+    "globals": "^17.4.0",
     "tsx": "^4.21.0",
     "typescript": "~5.9.2"
   }

@@ -36,3 +36,10 @@ export type PortfolioProjection = {
   monthlyIncomeAtEnd: number;
   items: PortfolioProjectionItem[];
 };
+
+export type PortfolioTimelinePoint = {
+  month: number;
+  invested: number;
+  estimatedValue: number;
+  estimatedIncome: number;
+};

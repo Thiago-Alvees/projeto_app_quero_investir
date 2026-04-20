@@ -41,3 +41,11 @@ yarn-error.*
 /android
 
 .env
+# local build artifacts
+dist-check/
+dist-smoke*/
+*.hbc
+*.hbc.map
+metadata.json
+com.facebook.react.fabric.*
+tmp_cvm/

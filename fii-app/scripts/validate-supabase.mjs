@@ -43,7 +43,7 @@ async function main() {
 
   const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-  console.log("[validate:supabase] Step 1/3: anonymous auth...");
+  console.log("[validate:supabase] Step 1/4: anonymous auth...");
   const { data: authData, error: authError } = await supabase.auth.signInAnonymously();
   if (authError) {
     console.error("[validate:supabase] Anonymous auth failed:", authError.message);
@@ -57,7 +57,7 @@ async function main() {
   }
   console.log(`[validate:supabase] OK: user id ${userId}`);
 
-  console.log("[validate:supabase] Step 2/3: checking table investment_portfolios...");
+  console.log("[validate:supabase] Step 2/4: checking table investment_portfolios...");
   const { error: portfoliosError } = await supabase
     .from("investment_portfolios")
     .select("id", { count: "exact", head: true })
@@ -70,7 +70,7 @@ async function main() {
   }
   console.log("[validate:supabase] OK: investment_portfolios table reachable.");
 
-  console.log("[validate:supabase] Step 3/3: checking table investment_portfolio_assets...");
+  console.log("[validate:supabase] Step 3/4: checking table investment_portfolio_assets...");
   const { error: assetsError } = await supabase
     .from("investment_portfolio_assets")
     .select("portfolio_id", { count: "exact", head: true })
@@ -82,6 +82,22 @@ async function main() {
     process.exit(1);
   }
   console.log("[validate:supabase] OK: investment_portfolio_assets table reachable.");
+
+  console.log("[validate:supabase] Step 4/4: checking table user_policy_acceptances...");
+  const { error: policiesError } = await supabase
+    .from("user_policy_acceptances")
+    .select("user_id", { count: "exact", head: true })
+    .limit(1);
+
+  if (policiesError) {
+    console.error(
+      "[validate:supabase] Policy acceptance table or policy check failed:",
+      policiesError.message
+    );
+    console.error("Hint: run SQL from fii-app/SUPABASE_SETUP.md in Supabase SQL Editor.");
+    process.exit(1);
+  }
+  console.log("[validate:supabase] OK: user_policy_acceptances table reachable.");
 
   console.log("[validate:supabase] SUCCESS: Supabase configured and reachable.");
 }

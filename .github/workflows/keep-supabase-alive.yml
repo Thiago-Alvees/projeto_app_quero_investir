@@ -1,0 +1,40 @@
+name: Keep Supabase Alive
+
+on:
+  schedule:
+    # Daily ping to avoid free-tier inactivity pauses.
+    - cron: "15 12 * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  keep-alive:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Ping Supabase REST API
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${SUPABASE_URL:-}" ] || [ -z "${SUPABASE_ANON_KEY:-}" ]; then
+            echo "Missing GitHub secrets: SUPABASE_URL and/or SUPABASE_ANON_KEY."
+            exit 1
+          fi
+
+          BASE="${SUPABASE_URL%/}"
+          URL="${BASE}/rest/v1/investment_portfolios?select=id&limit=1"
+
+          # This performs a cheap SELECT that should always return 200 (possibly empty list),
+          # keeping the project active without writing data.
+          curl -sS -f \
+            -H "apikey: ${SUPABASE_ANON_KEY}" \
+            -H "Authorization: Bearer ${SUPABASE_ANON_KEY}" \
+            -H "Accept: application/json" \
+            "${URL}" > /dev/null
+
+          echo "OK"

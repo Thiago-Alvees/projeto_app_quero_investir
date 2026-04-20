@@ -10,7 +10,7 @@ type UseInvestmentCatalogResult = {
   items: PortfolioAssetCatalogItem[];
   byKey: Map<string, PortfolioAssetCatalogItem>;
   loading: boolean;
-  source: "LIVE" | "FALLBACK";
+  source: "SNAPSHOT" | "FALLBACK";
   updatedAt: string | null;
   refresh: () => Promise<void>;
 };
@@ -44,4 +44,3 @@ export function useInvestmentCatalog(): UseInvestmentCatalogResult {
 
   return { items, byKey, loading, source, updatedAt, refresh };
 }
-

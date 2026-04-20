@@ -10,7 +10,7 @@ import {
 export type InvestmentCatalogResult = {
   items: PortfolioAssetCatalogItem[];
   byKey: Map<string, PortfolioAssetCatalogItem>;
-  source: "LIVE" | "FALLBACK";
+  source: "SNAPSHOT" | "FALLBACK";
   updatedAt: string | null;
 };
 
@@ -119,7 +119,13 @@ export async function getInvestmentCatalog(options: {
     return {
       items: dedupedItems,
       byKey: dedupedMap,
-      source: "LIVE",
+      source:
+        fiiResult.ok &&
+        fiiResult.source === "SNAPSHOT" &&
+        marketResult.ok &&
+        marketResult.source === "SNAPSHOT"
+          ? "SNAPSHOT"
+          : "FALLBACK",
       updatedAt: latestDateMs > 0 ? new Date(latestDateMs).toISOString() : null,
     };
   } catch (error) {
@@ -132,4 +138,3 @@ export async function getInvestmentCatalog(options: {
     };
   }
 }
-

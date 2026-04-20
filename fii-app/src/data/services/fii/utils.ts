@@ -20,7 +20,7 @@ export function normalizeBaseUrl(value: string): string {
   return value.replace(/\/+$/, "");
 }
 
-function getExtraValue(key: "BRAPI_TOKEN" | "BRAPI_PROXY_URL"): string | null {
+function getExtraValue(key: "BRAPI_PROXY_URL"): string | null {
   const extra =
     (Constants.expoConfig?.extra as { [k: string]: string | undefined } | undefined) ??
     {};
@@ -32,10 +32,6 @@ function getExtraValue(key: "BRAPI_TOKEN" | "BRAPI_PROXY_URL"): string | null {
   const value = extra[key] ?? manifestExtra?.[key] ?? "";
   const normalized = String(value).trim();
   return normalized ? normalized : null;
-}
-
-export function getBrapiToken(): string | null {
-  return getExtraValue("BRAPI_TOKEN");
 }
 
 export function getBrapiProxyUrl(): string | null {

@@ -1,14 +1,9 @@
-import type { MarketAsset } from "../../domain/models/marketAsset";
+import type { MarketAsset, MarketAssetClass } from "../../domain/models/marketAsset";
 import { MARKET_ASSETS_MOCK } from "../mock/marketAssets";
-import {
-  getBrapiProxyUrl,
-  getBrapiToken,
-  normalizeBaseUrl,
-  toUpper,
-} from "./fii/utils";
-import { BRAPI_BASE_URL } from "./fii/config";
+import { toUpper } from "./fii/utils";
+import { MARKET_FUNDAMENTALS_URL, MARKET_SNAPSHOT_URL } from "./market/config";
 
-export type MarketDataSource = "BRAPI" | "MOCK";
+export type MarketDataSource = "SNAPSHOT" | "MOCK";
 
 export type MarketListResult =
   | {
@@ -20,19 +15,35 @@ export type MarketListResult =
     }
   | { ok: false; message: string };
 
-type BrapiQuoteItem = {
-  symbol?: string;
-  regularMarketPrice?: number;
+type MarketSnapshotItem = {
+  ticker?: string;
+  assetClass?: MarketAssetClass;
   price?: number;
-  close?: number;
-  regularMarketTime?: number;
-  historicalDataPrice?: Array<{ date?: number | string; close?: number }>;
+  priceUpdatedAt?: string | null;
 };
 
-type BrapiQuoteResponse = {
-  results?: BrapiQuoteItem[];
-  error?: string;
-  message?: string;
+type MarketSnapshotPayload = {
+  generatedAt?: string | null;
+  provider?: string;
+  items?: MarketSnapshotItem[];
+};
+
+type MarketFundamentalsItem = {
+  ticker?: string;
+  assetClass?: MarketAssetClass;
+  name?: string;
+  category?: string;
+  pvp?: number;
+  pl?: number;
+  dividendYield12m?: number;
+  expenseRatio?: number;
+  expectedAnnualReturn?: number;
+};
+
+type MarketFundamentalsPayload = {
+  generatedAt?: string | null;
+  provider?: string;
+  items?: MarketFundamentalsItem[];
 };
 
 const CACHE_TTL_MS = 1000 * 60 * 15;
@@ -48,80 +59,48 @@ let memoryCache:
     }
   | null = null;
 
-function getPriceFromQuote(item: BrapiQuoteItem): number | null {
-  const direct =
-    typeof item.regularMarketPrice === "number"
-      ? item.regularMarketPrice
-      : typeof item.price === "number"
-        ? item.price
-        : typeof item.close === "number"
-          ? item.close
-          : null;
-
-  if (direct !== null && Number.isFinite(direct) && direct > 0) return direct;
-
-  const fromHistory = item.historicalDataPrice?.[0]?.close;
-  if (typeof fromHistory === "number" && Number.isFinite(fromHistory) && fromHistory > 0) {
-    return fromHistory;
-  }
-
-  return null;
+function toPositiveNumber(value: unknown): number | undefined {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : undefined;
 }
 
-async function fetchLatestPrices(tickers: string[]): Promise<{
-  priceMap: Map<string, number>;
-  updatedAt: string | null;
-  priceUpdatedAtByTicker: Record<string, string>;
-}> {
-  if (!tickers.length) {
-    return { priceMap: new Map(), updatedAt: null, priceUpdatedAtByTicker: {} };
-  }
+function toFiniteNumber(value: unknown): number | undefined {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : undefined;
+}
 
-  const token = getBrapiToken();
-  const proxyUrl = getBrapiProxyUrl();
-  const isProxy = Boolean(proxyUrl);
-  const baseUrl = proxyUrl ? normalizeBaseUrl(proxyUrl) : BRAPI_BASE_URL;
+function toIsoString(value: unknown): string | null {
+  if (!value) return null;
+  const date = new Date(String(value));
+  return Number.isNaN(date.getTime()) ? null : date.toISOString();
+}
 
-  const symbolPath = tickers.map((ticker) => toUpper(ticker)).join(",");
-  const query = [
-    "range=1d",
-    "interval=1d",
-    !isProxy && token ? `token=${encodeURIComponent(token)}` : null,
-  ]
-    .filter(Boolean)
-    .join("&");
+function getLatestDate(...values: Array<string | null | undefined>): string | null {
+  let latestMs = 0;
 
-  const url = `${baseUrl}/${symbolPath}?${query}`;
-  const response = await fetch(url);
-  if (!response.ok) throw new Error(`BRAPI ${response.status}`);
-
-  const payload = (await response.json()) as BrapiQuoteResponse;
-  const results = Array.isArray(payload.results) ? payload.results : [];
-
-  const priceMap = new Map<string, number>();
-  const priceUpdatedAtByTicker: Record<string, string> = {};
-  let updatedAt: string | null = null;
-
-  for (const row of results) {
-    const ticker = toUpper(row.symbol ?? "");
-    if (!ticker) continue;
-
-    const price = getPriceFromQuote(row);
-    if (price !== null) {
-      priceMap.set(ticker, price);
-    }
-
-    if (typeof row.regularMarketTime === "number" && Number.isFinite(row.regularMarketTime)) {
-      const ms = row.regularMarketTime > 1e12 ? row.regularMarketTime : row.regularMarketTime * 1000;
-      const iso = new Date(ms).toISOString();
-      priceUpdatedAtByTicker[ticker] = iso;
-      if (!updatedAt || ms > new Date(updatedAt).getTime()) {
-        updatedAt = iso;
-      }
+  for (const value of values) {
+    if (!value) continue;
+    const ms = new Date(value).getTime();
+    if (Number.isFinite(ms) && ms > latestMs) {
+      latestMs = ms;
     }
   }
 
-  return { priceMap, updatedAt, priceUpdatedAtByTicker };
+  return latestMs > 0 ? new Date(latestMs).toISOString() : null;
+}
+
+async function fetchSnapshot(): Promise<MarketSnapshotPayload | null> {
+  const response = await fetch(MARKET_SNAPSHOT_URL);
+  if (!response.ok) throw new Error(`HTTP ${response.status}`);
+  const payload = (await response.json()) as MarketSnapshotPayload;
+  return payload && Array.isArray(payload.items) ? payload : null;
+}
+
+async function fetchFundamentals(): Promise<MarketFundamentalsPayload | null> {
+  const response = await fetch(MARKET_FUNDAMENTALS_URL);
+  if (!response.ok) throw new Error(`HTTP ${response.status}`);
+  const payload = (await response.json()) as MarketFundamentalsPayload;
+  return payload && Array.isArray(payload.items) ? payload : null;
 }
 
 export async function getMarketAssets(options: { force: boolean }): Promise<MarketListResult> {
@@ -136,56 +115,123 @@ export async function getMarketAssets(options: { force: boolean }): Promise<Mark
   }
 
   const base = MARKET_ASSETS_MOCK.map((item) => ({ ...item }));
-  const tickers = base.map((item) => item.ticker);
+  const baseByKey = new Map(base.map((item) => [`${item.assetClass}:${toUpper(item.ticker)}`, item]));
+
+  let snapshot: MarketSnapshotPayload | null = null;
+  let fundamentals: MarketFundamentalsPayload | null = null;
 
   try {
-    const { priceMap, updatedAt, priceUpdatedAtByTicker } = await fetchLatestPrices(tickers);
-    const merged = base.map((item) => {
-      const tickerKey = toUpper(item.ticker);
-      const latestPrice = priceMap.get(toUpper(item.ticker));
-      const priceUpdatedAt = priceUpdatedAtByTicker[tickerKey] ?? updatedAt ?? null;
-      if (typeof latestPrice === "number" && Number.isFinite(latestPrice) && latestPrice > 0) {
-        return { ...item, price: latestPrice, priceUpdatedAt };
-      }
-      return { ...item, priceUpdatedAt };
-    });
-
-    memoryCache = {
-      savedAt: Date.now(),
-      payload: {
-        data: merged,
-        source: priceMap.size > 0 ? "BRAPI" : "MOCK",
-        updatedAt: updatedAt ?? null,
-        priceUpdatedAtByTicker,
-      },
-    };
-
-    return {
-      ok: true,
-      data: merged,
-      source: memoryCache.payload.source,
-      updatedAt: memoryCache.payload.updatedAt,
-      priceUpdatedAtByTicker: memoryCache.payload.priceUpdatedAtByTicker,
-    };
+    [snapshot, fundamentals] = await Promise.all([
+      fetchSnapshot().catch((error) => {
+        if (__DEV__) console.log("[market] snapshot remoto indisponivel:", String(error));
+        return null;
+      }),
+      fetchFundamentals().catch((error) => {
+        if (__DEV__) console.log("[market] fundamentos remotos indisponiveis:", String(error));
+        return null;
+      }),
+    ]);
   } catch (error) {
-    if (__DEV__) console.log("[market] fallback para mock:", String(error));
+    if (__DEV__) console.log("[market] falha inesperada:", String(error));
+  }
 
-    memoryCache = {
-      savedAt: Date.now(),
-      payload: {
-        data: base.map((item) => ({ ...item, priceUpdatedAt: null })),
-        source: "MOCK",
-        updatedAt: null,
-        priceUpdatedAtByTicker: {},
-      },
-    };
+  const snapshotByKey = new Map<string, MarketSnapshotItem>();
+  const fundamentalsByKey = new Map<string, MarketFundamentalsItem>();
+  const priceUpdatedAtByTicker: Record<string, string> = {};
+
+  for (const item of snapshot?.items ?? []) {
+    const ticker = toUpper(item.ticker ?? "");
+    if (!ticker) continue;
+    const assetClass = item.assetClass;
+    if (assetClass !== "STOCK" && assetClass !== "ETF") continue;
+
+    const key = `${assetClass}:${ticker}`;
+    snapshotByKey.set(key, item);
+
+    const priceUpdatedAt = toIsoString(item.priceUpdatedAt) ?? toIsoString(snapshot?.generatedAt);
+    if (priceUpdatedAt) {
+      priceUpdatedAtByTicker[ticker] = priceUpdatedAt;
+    }
+  }
+
+  for (const item of fundamentals?.items ?? []) {
+    const ticker = toUpper(item.ticker ?? "");
+    if (!ticker) continue;
+    const assetClass = item.assetClass;
+    if (assetClass !== "STOCK" && assetClass !== "ETF") continue;
+    fundamentalsByKey.set(`${assetClass}:${ticker}`, item);
+  }
+
+  const merged = base.map((item) => {
+    const key = `${item.assetClass}:${toUpper(item.ticker)}`;
+    const snapshotItem = snapshotByKey.get(key);
+    const fundamentalsItem = fundamentalsByKey.get(key);
+    const ticker = toUpper(item.ticker);
 
     return {
-      ok: true,
-      data: base.map((item) => ({ ...item, priceUpdatedAt: null })),
-      source: "MOCK",
-      updatedAt: null,
-      priceUpdatedAtByTicker: {},
-    };
+      ticker: item.ticker,
+      assetClass: item.assetClass,
+      name: fundamentalsItem?.name?.trim() || item.name,
+      category: fundamentalsItem?.category?.trim() || item.category,
+      price: toPositiveNumber(snapshotItem?.price) ?? item.price,
+      priceUpdatedAt:
+        toIsoString(snapshotItem?.priceUpdatedAt) ??
+        priceUpdatedAtByTicker[ticker] ??
+        toIsoString(snapshot?.generatedAt),
+      pvp: toFiniteNumber(fundamentalsItem?.pvp) ?? item.pvp,
+      pl: toFiniteNumber(fundamentalsItem?.pl) ?? item.pl,
+      dividendYield12m:
+        toFiniteNumber(fundamentalsItem?.dividendYield12m) ?? item.dividendYield12m,
+      expenseRatio: toFiniteNumber(fundamentalsItem?.expenseRatio) ?? item.expenseRatio,
+      expectedAnnualReturn:
+        toPositiveNumber(fundamentalsItem?.expectedAnnualReturn) ?? item.expectedAnnualReturn,
+    } satisfies MarketAsset;
+  });
+
+  for (const [key, item] of fundamentalsByKey) {
+    if (baseByKey.has(key)) continue;
+    if (!item.ticker || !item.assetClass || !item.name || !item.category) continue;
+
+    const snapshotItem = snapshotByKey.get(key);
+    const ticker = toUpper(item.ticker);
+    merged.push({
+      ticker,
+      assetClass: item.assetClass,
+      name: item.name,
+      category: item.category,
+      price: toPositiveNumber(snapshotItem?.price) ?? 0,
+      priceUpdatedAt:
+        toIsoString(snapshotItem?.priceUpdatedAt) ??
+        priceUpdatedAtByTicker[ticker] ??
+        toIsoString(snapshot?.generatedAt),
+      pvp: toFiniteNumber(item.pvp),
+      pl: toFiniteNumber(item.pl),
+      dividendYield12m: toFiniteNumber(item.dividendYield12m),
+      expenseRatio: toFiniteNumber(item.expenseRatio),
+      expectedAnnualReturn: toPositiveNumber(item.expectedAnnualReturn) ?? 0,
+    });
   }
+
+  const source: MarketDataSource =
+    snapshotByKey.size > 0 || fundamentalsByKey.size > 0 ? "SNAPSHOT" : "MOCK";
+  const updatedAt = getLatestDate(snapshot?.generatedAt, fundamentals?.generatedAt);
+  const payload = {
+    data: merged,
+    source,
+    updatedAt,
+    priceUpdatedAtByTicker,
+  };
+
+  memoryCache = {
+    savedAt: Date.now(),
+    payload,
+  };
+
+  return {
+    ok: true,
+    data: payload.data,
+    source: payload.source,
+    updatedAt: payload.updatedAt,
+    priceUpdatedAtByTicker: payload.priceUpdatedAtByTicker,
+  };
 }

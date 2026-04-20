@@ -14,6 +14,7 @@ import type { RootStackParamList } from "../navigation/AppNavigator";
 import HistorySparkline from "../components/HistorySparkline";
 import { isFavorite as getIsFavorite, toggleFavorite } from "../../data/services/favoritesService";
 import { analyzeMarketAsset } from "../../domain/rules/marketValuation";
+import { buildMarketAssetScore } from "../../domain/rules/investmentInsights";
 import { formatCurrencyBRL, formatDecimalBR } from "../utils/format";
 import { useFiiDetail } from "../hooks/useFiiDetail";
 import type { FiiHistoryPoint } from "../../data/services/fiiService";
@@ -59,6 +60,10 @@ function buildWeeklySummary(history: FiiHistoryPoint[]): string {
 export default function MarketAssetDetailScreen({ route }: Props) {
   const { asset } = route.params;
   const analysis = useMemo(() => analyzeMarketAsset(asset), [asset]);
+  const assetScore = useMemo(
+    () => buildMarketAssetScore({ asset, analysis }),
+    [asset, analysis]
+  );
   const { detail, loading, error } = useFiiDetail(asset.ticker);
 
   const [isFavorite, setIsFavorite] = useState(false);
@@ -111,6 +116,16 @@ export default function MarketAssetDetailScreen({ route }: Props) {
 
         <Text style={styles.status}>{analysis.status}</Text>
         <Text style={styles.message}>{analysis.summary}</Text>
+
+        <View style={styles.scoreCard}>
+          <Text style={styles.scoreTitle}>Score didático: {assetScore.score}/100</Text>
+          <Text style={styles.scoreLabel}>{assetScore.label}</Text>
+          {assetScore.reasons.map((reason) => (
+            <Text key={reason} style={styles.scoreReason}>
+              • {reason}
+            </Text>
+          ))}
+        </View>
 
         <View style={styles.block}>
           <Text style={styles.sectionTitle}>Indicadores principais</Text>
@@ -190,6 +205,18 @@ const styles = StyleSheet.create({
   metaLine: { fontSize: 12, color: "#555", marginTop: 8 },
   status: { fontSize: 16, fontWeight: "700", marginTop: 14 },
   message: { fontSize: 14, marginTop: 6 },
+  scoreCard: {
+    marginTop: 8,
+    borderWidth: 1,
+    borderColor: "#dbeafe",
+    backgroundColor: "#f0f7ff",
+    borderRadius: 12,
+    padding: 12,
+    gap: 6,
+  },
+  scoreTitle: { fontSize: 14, fontWeight: "800", color: "#1d4ed8" },
+  scoreLabel: { fontSize: 12, fontWeight: "700", color: "#1f2937" },
+  scoreReason: { fontSize: 12, color: "#374151" },
   block: { gap: 8, marginTop: 16 },
   sectionTitle: { fontSize: 16, fontWeight: "700", marginBottom: 4 },
   kpi: { fontSize: 14, color: "#111" },

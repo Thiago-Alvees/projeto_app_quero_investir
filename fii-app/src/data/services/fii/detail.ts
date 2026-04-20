@@ -2,7 +2,7 @@ import { BRAPI_BASE_URL, CACHE_TTL_DETAIL_MS, DETAIL_CACHE_PREFIX } from "./conf
 import { readCache, writeCache } from "./cache";
 import { parseBrapiDetail } from "./parsers";
 import type { BrapiQuoteResponse, FiiDetail, Result } from "./types";
-import { getBrapiProxyUrl, getBrapiToken, normalizeBaseUrl, toUpper } from "./utils";
+import { getBrapiProxyUrl, normalizeBaseUrl, toUpper } from "./utils";
 
 export async function getFiiDetail(
   ticker: string,
@@ -18,16 +18,13 @@ export async function getFiiDetail(
   }
 
   try {
-    const token = getBrapiToken();
     const proxyUrl = getBrapiProxyUrl();
     const baseUrl = proxyUrl ? normalizeBaseUrl(proxyUrl) : BRAPI_BASE_URL;
-    const isProxy = Boolean(proxyUrl);
 
     const query = [
       "modules=summaryProfile",
       "range=3mo",
       "interval=1d",
-      !isProxy && token ? `token=${encodeURIComponent(token)}` : null,
     ]
       .filter(Boolean)
       .join("&");
@@ -36,11 +33,11 @@ export async function getFiiDetail(
     const response = await fetch(url);
 
     if (!response.ok) {
-      return {
-        ok: false,
-        message:
-          response.status === 401
-            ? "Token BRAPI inválido ou ausente."
+        return {
+          ok: false,
+          message:
+            response.status === 401
+              ? "Detalhes temporariamente indisponíveis. Configure `BRAPI_PROXY_URL` para consultar o provedor com segurança."
             : response.status === 402
               ? "Limite do plano BRAPI excedido."
               : `Erro ao buscar detalhes (${response.status}).`,

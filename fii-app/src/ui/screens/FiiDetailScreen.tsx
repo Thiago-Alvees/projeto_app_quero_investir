@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -15,12 +16,18 @@ import type { RootStackParamList } from "../navigation/AppNavigator";
 import type { FiiDetail, FiiHistoryPoint } from "../../data/services/fiiService";
 import HistorySparkline from "../components/HistorySparkline";
 import { isFavorite as getIsFavorite, toggleFavorite } from "../../data/services/favoritesService";
+import {
+  getFiiAlertRule,
+  removeFiiAlertRule,
+  upsertFiiAlertRule,
+} from "../../data/services/alertService";
 import { computePvp } from "../../domain/rules/pvp";
 import {
   getValuationBreakdown,
   getValuationMessage,
   getValuationStatus,
 } from "../../domain/rules/valuation";
+import { buildFiiScore } from "../../domain/rules/investmentInsights";
 import {
   simulateFiiRecurringContribution,
   simulateRecurringContribution,
@@ -76,7 +83,7 @@ function buildWeeklySummary(history: FiiHistoryPoint[]): string {
   return `Nos últimos ${ordered.length} pregões, o preço ${movement} ${formatDecimalBR(
     absVariation,
     2
-  )}% (min ${formatCurrencyBRL(min)} | max ${formatCurrencyBRL(max)}).`;
+  )}% (mín ${formatCurrencyBRL(min)} | máx ${formatCurrencyBRL(max)}).`;
 }
 
 export default function FiiDetailScreen({ route }: Props) {
@@ -89,6 +96,9 @@ export default function FiiDetailScreen({ route }: Props) {
   const [monthlyContributionInput, setMonthlyContributionInput] = useState("500");
   const [monthsInput, setMonthsInput] = useState("24");
   const [reinvestDividends, setReinvestDividends] = useState(true);
+  const [alertPriceInput, setAlertPriceInput] = useState("");
+  const [alertDyInput, setAlertDyInput] = useState("");
+  const [alertLoading, setAlertLoading] = useState(false);
 
   const detailData = detail ?? EMPTY_DETAIL;
 
@@ -105,11 +115,53 @@ export default function FiiDetailScreen({ route }: Props) {
     };
   }, [fii.ticker]);
 
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      const rule = await getFiiAlertRule(fii.ticker);
+      if (!active || !rule) return;
+      setAlertPriceInput(rule.maxPrice ? String(rule.maxPrice) : "");
+      setAlertDyInput(rule.minDy ? String(rule.minDy) : "");
+    })();
+
+    return () => {
+      active = false;
+    };
+  }, [fii.ticker]);
+
   async function handleToggleFavorite() {
     setFavoriteLoading(true);
     const next = await toggleFavorite(fii.ticker);
     setIsFavorite(next);
     setFavoriteLoading(false);
+  }
+
+  async function handleSaveAlert() {
+    setAlertLoading(true);
+    const saved = await upsertFiiAlertRule({
+      ticker: fii.ticker,
+      maxPrice: parseNumberInput(alertPriceInput),
+      minDy: parseNumberInput(alertDyInput),
+    });
+    setAlertLoading(false);
+
+    if (!saved) {
+      Alert.alert(
+        "Alerta inválido",
+        "Preencha ao menos um critério (preço máximo ou DY mínimo)."
+      );
+      return;
+    }
+
+    Alert.alert("Alerta salvo", `Alerta de ${fii.ticker} atualizado com sucesso.`);
+  }
+
+  async function handleClearAlert() {
+    setAlertLoading(true);
+    await removeFiiAlertRule(fii.ticker);
+    setAlertPriceInput("");
+    setAlertDyInput("");
+    setAlertLoading(false);
   }
 
   const pvp = computePvp(fii);
@@ -120,6 +172,7 @@ export default function FiiDetailScreen({ route }: Props) {
     fii.dyStatus ?? "APURACAO"
   );
   const valuationBreakdown = getValuationBreakdown(pvp);
+  const fiiScore = useMemo(() => buildFiiScore({ fii, pvp, status }), [fii, pvp, status]);
 
   const hasPrice = Number.isFinite(fii.price) && fii.price > 0;
   const hasPvp = Number.isFinite(pvp);
@@ -227,6 +280,16 @@ export default function FiiDetailScreen({ route }: Props) {
 
       <Text style={styles.status}>{status}</Text>
       <Text style={styles.message}>{valuationMessage}</Text>
+
+      <View style={styles.scoreCard}>
+        <Text style={styles.scoreTitle}>Score didático: {fiiScore.score}/100</Text>
+        <Text style={styles.scoreLabel}>{fiiScore.label}</Text>
+        {fiiScore.reasons.map((reason) => (
+          <Text key={reason} style={styles.scoreReason}>
+            • {reason}
+          </Text>
+        ))}
+      </View>
 
       <View style={styles.block}>
         <Text style={styles.kpi}>Tipo: {fii.type}</Text>
@@ -347,10 +410,40 @@ export default function FiiDetailScreen({ route }: Props) {
       </View>
 
       <View style={styles.block}>
+        <Text style={styles.sectionTitle}>Alertas do ativo</Text>
+        <Text style={styles.simHint}>
+          Configure alerta para acompanhar preço alvo e DY mínimo deste FII.
+        </Text>
+        <TextInput
+          value={alertPriceInput}
+          onChangeText={setAlertPriceInput}
+          keyboardType="numeric"
+          placeholder="Preço máximo (ex: 115,50)"
+          style={styles.input}
+        />
+        <TextInput
+          value={alertDyInput}
+          onChangeText={setAlertDyInput}
+          keyboardType="numeric"
+          placeholder="DY mínimo (ex: 9,0)"
+          style={styles.input}
+        />
+        <View style={styles.alertActions}>
+          <Pressable onPress={handleSaveAlert} style={styles.alertPrimary} disabled={alertLoading}>
+            <Text style={styles.alertPrimaryText}>
+              {alertLoading ? "Salvando..." : "Salvar alerta"}
+            </Text>
+          </Pressable>
+          <Pressable onPress={handleClearAlert} style={styles.alertSecondary} disabled={alertLoading}>
+            <Text style={styles.alertSecondaryText}>Remover</Text>
+          </Pressable>
+        </View>
+      </View>
+
+      <View style={styles.block}>
         <Text style={styles.sectionTitle}>Simulador e comparativo</Text>
         <Text style={styles.simHint}>
-          Informe apenas seu aporte mensal e o tempo. O DY deste fundo é usado
-          automaticamente.
+          Informe apenas seu aporte mensal e o tempo. O DY deste fundo é usado automaticamente.
         </Text>
 
         <TextInput
@@ -380,8 +473,7 @@ export default function FiiDetailScreen({ route }: Props) {
 
         {rates ? (
           <Text style={styles.rateInfo}>
-            Taxas de referência: Poupança {formatDecimalBR(rates.savingsAnnual, 2)}%
-            {" "}a.a. |
+            Taxas de referência: Poupança {formatDecimalBR(rates.savingsAnnual, 2)}% a.a. |
             {` ${normalizeUtf8Text(rates.fixedIncomeLabel)} ${formatDecimalBR(
               rates.fixedIncomeAnnual,
               2
@@ -391,8 +483,7 @@ export default function FiiDetailScreen({ route }: Props) {
 
         {rates && rates.source === "BCB" ? (
           <Text style={styles.rateInfo}>
-            Fonte BCB: poupança {rates.savingsDate ?? "-"} | CDI{" "}
-            {rates.fixedIncomeDate ?? "-"}
+            Fonte BCB: poupança {rates.savingsDate ?? "-"} | CDI {rates.fixedIncomeDate ?? "-"}
           </Text>
         ) : null}
 
@@ -467,8 +558,8 @@ export default function FiiDetailScreen({ route }: Props) {
             ) : null}
 
             <Text style={styles.simDisclaimer}>
-              Comparativo educativo. Não considera impostos, taxas, vacância ou
-              variação real do mercado.
+              Comparativo educativo. Não considera impostos, taxas, vacância ou variação real do
+              mercado.
             </Text>
           </View>
         )}
@@ -502,6 +593,17 @@ const styles = StyleSheet.create({
   metaLine: { fontSize: 12, color: "#555" },
   status: { fontSize: 16, fontWeight: "700", marginTop: 14 },
   message: { fontSize: 14, marginTop: 6, marginBottom: 12 },
+  scoreCard: {
+    borderWidth: 1,
+    borderColor: "#dbeafe",
+    backgroundColor: "#f0f7ff",
+    borderRadius: 12,
+    padding: 12,
+    gap: 6,
+  },
+  scoreTitle: { fontSize: 14, fontWeight: "800", color: "#1d4ed8" },
+  scoreLabel: { fontSize: 12, fontWeight: "700", color: "#1f2937" },
+  scoreReason: { fontSize: 12, color: "#374151" },
   block: { gap: 8, marginTop: 16 },
   sectionTitle: { fontSize: 16, fontWeight: "700", marginBottom: 4 },
   kpi: { fontSize: 14, color: "#111" },
@@ -519,6 +621,24 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     backgroundColor: "#fff",
   },
+  alertActions: { flexDirection: "row", gap: 8 },
+  alertPrimary: {
+    flex: 1,
+    borderRadius: 10,
+    backgroundColor: "#111827",
+    alignItems: "center",
+    paddingVertical: 10,
+  },
+  alertPrimaryText: { color: "#fff", fontWeight: "700", fontSize: 12 },
+  alertSecondary: {
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "#b91c1c",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 12,
+  },
+  alertSecondaryText: { color: "#b91c1c", fontWeight: "700", fontSize: 12 },
   switchRow: {
     flexDirection: "row",
     justifyContent: "space-between",

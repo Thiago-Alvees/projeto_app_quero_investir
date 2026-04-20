@@ -37,7 +37,7 @@ type PortfolioAssetRow = {
 };
 
 let memoryCache: InvestmentPortfolio[] | null = null;
-let cloudMode: CloudMode = isSupabaseConfigured() ? "CLOUD" : "LOCAL";
+let cloudMode: CloudMode = "LOCAL";
 let migrationPromise: Promise<void> | null = null;
 
 function sortByUpdatedAtDesc(items: InvestmentPortfolio[]): InvestmentPortfolio[] {
@@ -147,9 +147,6 @@ async function listCloud(scope: "OWN" | "PUBLIC"): Promise<InvestmentPortfolio[]
   const supabase = getSupabaseClient();
   if (!supabase) return null;
 
-  const ownerId = await ensureSupabaseUserId();
-  if (!ownerId) return null;
-
   let query = supabase
     .from("investment_portfolios")
     .select(
@@ -170,6 +167,8 @@ async function listCloud(scope: "OWN" | "PUBLIC"): Promise<InvestmentPortfolio[]
     .order("updated_at", { ascending: false });
 
   if (scope === "OWN") {
+    const ownerId = await ensureSupabaseUserId();
+    if (!ownerId) return null;
     query = query.eq("owner_id", ownerId);
   } else {
     query = query.eq("visibility", "PUBLICA").limit(80);
@@ -188,9 +187,6 @@ async function listCloud(scope: "OWN" | "PUBLIC"): Promise<InvestmentPortfolio[]
 async function getCloudById(id: string): Promise<InvestmentPortfolio | null> {
   const supabase = getSupabaseClient();
   if (!supabase) return null;
-
-  const ownerId = await ensureSupabaseUserId();
-  if (!ownerId) return null;
 
   const { data, error } = await supabase
     .from("investment_portfolios")
@@ -491,6 +487,8 @@ export async function savePortfolio(
       await persistLocal(upsertIntoLocalCache(cloudSaved, local));
       return cloudSaved;
     }
+
+    throw new Error("Faça login em uma conta válida para salvar carteiras na nuvem.");
   }
 
   cloudMode = "LOCAL";
@@ -544,11 +542,18 @@ export async function savePortfolio(
 export async function deletePortfolio(id: string): Promise<void> {
   if (isSupabaseConfigured()) {
     const deletedCloud = await deleteCloud(id);
-    cloudMode = deletedCloud ? "CLOUD" : "LOCAL";
-  } else {
-    cloudMode = "LOCAL";
+    if (!deletedCloud) {
+      throw new Error("Não foi possível excluir a carteira na nuvem.");
+    }
+
+    cloudMode = "CLOUD";
+    const all = await readLocalAll();
+    const next = all.filter((item) => item.id !== id);
+    await persistLocal(next);
+    return;
   }
 
+  cloudMode = "LOCAL";
   const all = await readLocalAll();
   const next = all.filter((item) => item.id !== id);
   await persistLocal(next);
@@ -571,7 +576,10 @@ export async function deleteAllPortfoliosForCurrentUser(): Promise<boolean> {
       }
 
       if (__DEV__) console.log("[portfolio] cloud delete all failed:", error.message);
+      return false;
     }
+
+    return false;
   }
 
   cloudMode = "LOCAL";

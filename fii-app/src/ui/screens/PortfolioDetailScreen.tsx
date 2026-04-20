@@ -12,8 +12,12 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { deletePortfolio, getPortfolioById } from "../../data/services/portfolioService";
+import { getSupabaseSessionUser } from "../../data/services/supabase/client";
 import type { InvestmentPortfolio } from "../../domain/models/portfolio";
-import { simulatePortfolio } from "../../domain/rules/portfolioSimulator";
+import {
+  simulatePortfolio,
+  simulatePortfolioTimeline,
+} from "../../domain/rules/portfolioSimulator";
 import type { RootStackParamList } from "../navigation/AppNavigator";
 import { useInvestmentCatalog } from "../hooks/useInvestmentCatalog";
 import { formatCurrencyBRL, formatDecimalBR } from "../utils/format";
@@ -34,15 +38,22 @@ function formatDateLabel(value?: string | null): string {
 export default function PortfolioDetailScreen({ route, navigation }: Props) {
   const { portfolioId, readOnly } = route.params;
   const [portfolio, setPortfolio] = useState<InvestmentPortfolio | null>(null);
+  const [hasAccountSession, setHasAccountSession] = useState(false);
   const [loading, setLoading] = useState(true);
   const { byKey, source, updatedAt } = useInvestmentCatalog();
 
   useEffect(() => {
     let active = true;
     (async () => {
-      const data = await getPortfolioById(portfolioId);
+      const [data, sessionUser] = await Promise.all([
+        getPortfolioById(portfolioId),
+        getSupabaseSessionUser(),
+      ]);
       if (!active) return;
       setPortfolio(data);
+      setHasAccountSession(
+        Boolean(sessionUser && !sessionUser.isAnonymous && sessionUser.email)
+      );
       setLoading(false);
     })();
     return () => {
@@ -54,22 +65,35 @@ export default function PortfolioDetailScreen({ route, navigation }: Props) {
     () => (portfolio ? simulatePortfolio(portfolio, byKey) : null),
     [portfolio, byKey]
   );
+  const timeline = useMemo(
+    () => (portfolio ? simulatePortfolioTimeline(portfolio, byKey) : []),
+    [portfolio, byKey]
+  );
 
-  const canEdit = !readOnly;
+  const canEdit = !readOnly && hasAccountSession;
 
   async function handleDelete() {
-    if (!portfolio) return;
+    if (!portfolio || !canEdit) return;
     Alert.alert("Excluir carteira", "Deseja excluir esta carteira?", [
       { text: "Cancelar", style: "cancel" },
-      {
-        text: "Excluir",
-        style: "destructive",
-        onPress: async () => {
-          await deletePortfolio(portfolio.id);
-          navigation.goBack();
+        {
+          text: "Excluir",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await deletePortfolio(portfolio.id);
+              navigation.goBack();
+            } catch (error) {
+              Alert.alert(
+                "Falha ao excluir",
+                error instanceof Error
+                  ? error.message
+                  : "Não foi possível excluir a carteira agora."
+              );
+            }
+          },
         },
-      },
-    ]);
+      ]);
   }
 
   async function handleShare() {
@@ -82,9 +106,7 @@ export default function PortfolioDetailScreen({ route, navigation }: Props) {
       `Valor final estimado: ${formatCurrencyBRL(projection.finalValue)}`,
       `Ganho estimado: ${formatCurrencyBRL(projection.gain)}`,
       `Renda mensal estimada ao final: ${formatCurrencyBRL(projection.monthlyIncomeAtEnd)}`,
-      portfolio.shareCode
-        ? `Código de compartilhamento: ${portfolio.shareCode}`
-        : null,
+      portfolio.shareCode ? `Código de compartilhamento: ${portfolio.shareCode}` : null,
       "",
       "Compartilhado via Quero Investir (conteúdo educacional).",
     ]
@@ -125,17 +147,20 @@ export default function PortfolioDetailScreen({ route, navigation }: Props) {
             </Text>
             {portfolio.shareCode ? (
               <Text style={styles.subtitle}>
-                Código público:{" "}
-                <Text style={styles.visibilityValue}>{portfolio.shareCode}</Text>
+                Código público: <Text style={styles.visibilityValue}>{portfolio.shareCode}</Text>
               </Text>
             ) : null}
             <Text style={styles.catalogStatus}>
-              Base de preços: {source === "LIVE" ? "atualizada" : "fallback local"}
+              Base de preços: {source === "SNAPSHOT" ? "snapshot curado" : "fallback local"}
               {updatedAt ? ` | ${new Date(updatedAt).toLocaleString("pt-BR")}` : ""}
             </Text>
             {readOnly ? (
               <Text style={styles.readOnlyHint}>
                 Modo somente leitura: carteira pública de outro usuário.
+              </Text>
+            ) : !hasAccountSession ? (
+              <Text style={styles.readOnlyHint}>
+                Entre com sua conta para editar ou excluir esta carteira.
               </Text>
             ) : null}
           </View>
@@ -179,6 +204,23 @@ export default function PortfolioDetailScreen({ route, navigation }: Props) {
           <Text style={styles.helper}>Sem dados suficientes para projetar a carteira.</Text>
         )}
 
+        {timeline.length ? (
+          <View style={styles.timelineCard}>
+            <Text style={styles.resultTitle}>Evolução estimada (mês a mês)</Text>
+            {timeline.slice(-6).map((point) => (
+              <View key={point.month} style={styles.timelineRow}>
+                <Text style={styles.timelineMonth}>M{point.month}</Text>
+                <Text style={styles.timelineValue}>
+                  {formatCurrencyBRL(point.estimatedValue)}
+                </Text>
+                <Text style={styles.timelineMeta}>
+                  Renda: {formatCurrencyBRL(point.estimatedIncome)}
+                </Text>
+              </View>
+            ))}
+          </View>
+        ) : null}
+
         <Text style={styles.sectionTitle}>Composição e contribuição por ativo</Text>
         <View style={styles.list}>
           {portfolio.assets.map((asset) => {
@@ -201,8 +243,7 @@ export default function PortfolioDetailScreen({ route, navigation }: Props) {
                   Aporte mensal estimado: {formatCurrencyBRL(contribution)}
                 </Text>
                 <Text style={styles.itemMeta}>
-                  Cotação base:{" "}
-                  {catalog ? formatCurrencyBRL(catalog.price) : "indisponível"}
+                  Cotação base: {catalog ? formatCurrencyBRL(catalog.price) : "indisponível"}
                 </Text>
                 <Text style={styles.itemMeta}>
                   Última atualização da cotação:{" "}
@@ -237,8 +278,8 @@ export default function PortfolioDetailScreen({ route, navigation }: Props) {
         </View>
 
         <Text style={styles.disclaimer}>
-          Projeção educativa. Não considera impostos, taxas, variação real de
-          mercado e não é recomendação de investimento.
+          Projeção educativa. Não considera impostos, taxas, variação real de mercado e não é
+          recomendação de investimento.
         </Text>
       </ScrollView>
     </SafeAreaView>
@@ -290,6 +331,24 @@ const styles = StyleSheet.create({
   resultTitle: { fontSize: 15, fontWeight: "700", marginBottom: 2 },
   resultLine: { fontSize: 13, color: "#111" },
   sectionTitle: { marginTop: 10, fontSize: 16, fontWeight: "700" },
+  timelineCard: {
+    marginTop: 8,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: "#e5e7eb",
+    borderRadius: 10,
+    backgroundColor: "#fff",
+    gap: 8,
+  },
+  timelineRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 10,
+  },
+  timelineMonth: { fontSize: 12, fontWeight: "700", color: "#111827", width: 30 },
+  timelineValue: { fontSize: 12, color: "#111", flex: 1 },
+  timelineMeta: { fontSize: 11, color: "#6b7280" },
   list: { gap: 8 },
   itemCard: {
     borderWidth: 1,
