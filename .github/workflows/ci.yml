@@ -36,6 +36,7 @@ jobs:
           node --check ../scripts/update_snapshot.mjs
           node --check ../scripts/update_market_snapshot.mjs
           node --check ../scripts/update_market_fundamentals.mjs
+          node --check ../scripts/update_events_feed.mjs
 
       - name: Typecheck
         run: npm run typecheck

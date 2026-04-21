@@ -25,6 +25,7 @@ import ResetPasswordScreen from "../screens/ResetPasswordScreen";
 import DividendCalendarScreen from "../screens/DividendCalendarScreen";
 import CoursesScreen from "../screens/CoursesScreen";
 import HelpScreen from "../screens/HelpScreen";
+import EventsFeedScreen from "../screens/EventsFeedScreen";
 import PoliciesScreen from "../screens/PoliciesScreen";
 import FirstAccessTour from "../components/FirstAccessTour";
 import PolicyAcceptancePrompt from "../components/PolicyAcceptancePrompt";
@@ -73,6 +74,11 @@ export type RootStackParamList = {
     | {
         invalidLink?: boolean;
         message?: string;
+      }
+    | undefined;
+  EventsFeed:
+    | {
+        query?: string;
       }
     | undefined;
   Help: undefined;
@@ -378,6 +384,11 @@ export default function AppNavigator() {
             name="ResetPassword"
             component={ResetPasswordScreen}
             options={{ title: "Nova senha" }}
+          />
+          <Stack.Screen
+            name="EventsFeed"
+            component={EventsFeedScreen}
+            options={{ title: "Eventos oficiais" }}
           />
           <Stack.Screen
             name="Help"

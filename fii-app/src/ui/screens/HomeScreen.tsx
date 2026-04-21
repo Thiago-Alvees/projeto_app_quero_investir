@@ -29,6 +29,7 @@ import MarketAssetCard from "../components/MarketAssetCard";
 import { useFiiList } from "../hooks/useFiiList";
 import { useInvestmentCatalog } from "../hooks/useInvestmentCatalog";
 import { useMarketAssets } from "../hooks/useMarketAssets";
+import { useEventsFeed } from "../hooks/useEventsFeed";
 import { formatCurrencyBRL, formatDecimalBR } from "../utils/format";
 import { normalizeUtf8Text } from "../utils/text";
 
@@ -101,6 +102,8 @@ export default function HomeScreen() {
     refresh: refreshMarket,
   } = useMarketAssets();
   const { items: catalogItems } = useInvestmentCatalog();
+  const { items: eventsItems, loading: eventsLoading, updatedAt: eventsUpdatedAt } =
+    useEventsFeed();
 
   const [assetTab, setAssetTab] = useState<AssetTab>("FII");
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -388,6 +391,42 @@ export default function HomeScreen() {
               {fiiLoading || marketLoading ? "Atualizando..." : "Atualizar"}
             </Text>
           </Pressable>
+        </View>
+
+        <View style={styles.eventsCard}>
+          <View style={styles.eventsHeader}>
+            <Text style={styles.eventsTitle}>Eventos oficiais</Text>
+            <Pressable
+              onPress={() => navigation.navigate("EventsFeed")}
+              style={styles.eventsLinkBtn}
+            >
+              <Text style={styles.eventsLinkText}>Ver todos</Text>
+            </Pressable>
+          </View>
+          <Text style={styles.eventsMeta}>
+            {eventsUpdatedAt
+              ? `Atualizado: ${new Date(eventsUpdatedAt).toLocaleString("pt-BR")}`
+              : "Atualização indisponível"}
+          </Text>
+          {eventsLoading ? (
+            <View style={styles.eventsLoadingRow}>
+              <ActivityIndicator />
+              <Text style={styles.eventsHint}>Carregando eventos...</Text>
+            </View>
+          ) : eventsItems.length === 0 ? (
+            <Text style={styles.eventsHint}>Nenhum evento oficial recente disponível.</Text>
+          ) : (
+            eventsItems.slice(0, 3).map((item) => (
+              <Pressable
+                key={item.id}
+                onPress={() => navigation.navigate("EventsFeed", { query: item.ticker })}
+              >
+                <Text style={styles.eventsLine}>
+                  • {item.ticker}: {normalizeUtf8Text(item.subject || item.category)}
+                </Text>
+              </Pressable>
+            ))
+          )}
         </View>
 
         {alertHits.length > 0 ? (
@@ -721,6 +760,33 @@ const styles = StyleSheet.create({
     backgroundColor: "#111827",
   },
   refreshText: { color: "#fff", fontWeight: "700", fontSize: 12 },
+  eventsCard: {
+    marginTop: 10,
+    padding: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#93c5fd",
+    backgroundColor: "#eff6ff",
+    gap: 6,
+  },
+  eventsHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 8,
+  },
+  eventsTitle: { fontSize: 13, fontWeight: "800", color: "#1e3a8a" },
+  eventsLinkBtn: {
+    backgroundColor: "#1e3a8a",
+    borderRadius: 999,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+  },
+  eventsLinkText: { color: "#fff", fontWeight: "800", fontSize: 12 },
+  eventsMeta: { fontSize: 11, color: "#334155" },
+  eventsLoadingRow: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 2 },
+  eventsHint: { fontSize: 12, color: "#334155" },
+  eventsLine: { fontSize: 12, color: "#0f172a" },
   alertCard: {
     marginTop: 10,
     padding: 12,

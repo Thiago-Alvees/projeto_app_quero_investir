@@ -2,6 +2,7 @@ export const MARKET_UNIVERSE = [
   {
     ticker: "ITUB4",
     assetClass: "STOCK",
+    cvmCode: 19348,
     name: "Itau Unibanco PN",
     category: "Financeiro",
     pvp: 1.72,
@@ -12,6 +13,7 @@ export const MARKET_UNIVERSE = [
   {
     ticker: "BBAS3",
     assetClass: "STOCK",
+    cvmCode: 1023,
     name: "Banco do Brasil ON",
     category: "Financeiro",
     pvp: 1.21,
@@ -22,6 +24,7 @@ export const MARKET_UNIVERSE = [
   {
     ticker: "WEGE3",
     assetClass: "STOCK",
+    cvmCode: 5410,
     name: "WEG ON",
     category: "Industrial",
     pvp: 8.1,
@@ -32,6 +35,7 @@ export const MARKET_UNIVERSE = [
   {
     ticker: "TAEE11",
     assetClass: "STOCK",
+    cvmCode: 20257,
     name: "Taesa Unit",
     category: "Energia",
     pvp: 2.11,
@@ -42,6 +46,7 @@ export const MARKET_UNIVERSE = [
   {
     ticker: "PETR4",
     assetClass: "STOCK",
+    cvmCode: 9512,
     name: "Petrobras PN",
     category: "Petroleo e Gas",
     pvp: 1.22,
@@ -52,6 +57,7 @@ export const MARKET_UNIVERSE = [
   {
     ticker: "B3SA3",
     assetClass: "STOCK",
+    cvmCode: 21610,
     name: "B3 ON",
     category: "Financeiro",
     pvp: 2.5,

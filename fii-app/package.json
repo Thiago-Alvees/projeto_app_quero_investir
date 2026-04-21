@@ -13,7 +13,8 @@
     "lint": "eslint . --ext .js,.mjs,.ts,.tsx",
     "typecheck": "tsc --noEmit",
     "data:market:snapshot": "node ../scripts/update_market_snapshot.mjs",
-    "data:market:fundamentals": "node ../scripts/update_market_fundamentals.mjs"
+    "data:market:fundamentals": "node ../scripts/update_market_fundamentals.mjs",
+    "data:events": "node ../scripts/update_events_feed.mjs"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.3",

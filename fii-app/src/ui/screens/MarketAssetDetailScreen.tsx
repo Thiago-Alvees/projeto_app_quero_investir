@@ -12,11 +12,13 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 
 import type { RootStackParamList } from "../navigation/AppNavigator";
 import HistorySparkline from "../components/HistorySparkline";
+import * as WebBrowser from "expo-web-browser";
 import { isFavorite as getIsFavorite, toggleFavorite } from "../../data/services/favoritesService";
 import { analyzeMarketAsset } from "../../domain/rules/marketValuation";
 import { buildMarketAssetScore } from "../../domain/rules/investmentInsights";
 import { formatCurrencyBRL, formatDecimalBR } from "../utils/format";
 import { useFiiDetail } from "../hooks/useFiiDetail";
+import { useEventsFeed } from "../hooks/useEventsFeed";
 import type { FiiHistoryPoint } from "../../data/services/fiiService";
 import { normalizeUtf8Text } from "../utils/text";
 
@@ -57,7 +59,7 @@ function buildWeeklySummary(history: FiiHistoryPoint[]): string {
   )}% (min ${formatCurrencyBRL(min)} | max ${formatCurrencyBRL(max)}).`;
 }
 
-export default function MarketAssetDetailScreen({ route }: Props) {
+export default function MarketAssetDetailScreen({ route, navigation }: Props) {
   const { asset } = route.params;
   const analysis = useMemo(() => analyzeMarketAsset(asset), [asset]);
   const assetScore = useMemo(
@@ -65,6 +67,7 @@ export default function MarketAssetDetailScreen({ route }: Props) {
     [asset, analysis]
   );
   const { detail, loading, error } = useFiiDetail(asset.ticker);
+  const { items: eventsItems } = useEventsFeed();
 
   const [isFavorite, setIsFavorite] = useState(false);
   const [favoriteLoading, setFavoriteLoading] = useState(false);
@@ -92,6 +95,17 @@ export default function MarketAssetDetailScreen({ route }: Props) {
     if (!detail?.history?.length) return null;
     return buildWeeklySummary(detail.history);
   }, [detail?.history]);
+
+  const assetEvents = useMemo(() => {
+    const target = asset.ticker.toUpperCase();
+    return eventsItems.filter((item) => item.ticker.toUpperCase() === target).slice(0, 6);
+  }, [eventsItems, asset.ticker]);
+
+  async function handleOpenEvent(url: string) {
+    const safe = String(url ?? "").trim();
+    if (!safe) return;
+    await WebBrowser.openBrowserAsync(safe);
+  }
 
   return (
     <SafeAreaView edges={["top"]} style={styles.safe}>
@@ -182,6 +196,40 @@ export default function MarketAssetDetailScreen({ route }: Props) {
           ) : null}
         </View>
 
+        <View style={styles.block}>
+          <View style={styles.eventsTitleRow}>
+            <Text style={styles.sectionTitle}>Eventos oficiais (CVM)</Text>
+            <Pressable
+              onPress={() => navigation.navigate("EventsFeed", { query: asset.ticker })}
+              style={styles.eventsLinkBtn}
+            >
+              <Text style={styles.eventsLinkText}>Ver todos</Text>
+            </Pressable>
+          </View>
+          {assetEvents.length === 0 ? (
+            <Text style={styles.kpiMuted}>Sem eventos oficiais recentes para este ativo.</Text>
+          ) : (
+            assetEvents.map((event) => (
+              <Pressable
+                key={event.id}
+                onPress={() => void handleOpenEvent(event.url)}
+                style={styles.eventRow}
+              >
+                <Text style={styles.eventTitle}>
+                  {event.category}
+                  {event.type ? ` • ${event.type}` : ""}
+                </Text>
+                <Text style={styles.eventSubject} numberOfLines={2}>
+                  {normalizeUtf8Text(event.subject)}
+                </Text>
+                <Text style={styles.eventMeta}>
+                  {formatDateLabel(event.deliveredAt ?? event.referenceDate)}
+                </Text>
+              </Pressable>
+            ))
+          )}
+        </View>
+
         <Text style={styles.disclaimer}>
           Conteúdo educacional. Não é recomendação de investimento.
         </Text>
@@ -225,5 +273,29 @@ const styles = StyleSheet.create({
   helper: { fontSize: 12, color: "#666" },
   inlineRow: { flexDirection: "row", alignItems: "center", gap: 8 },
   weeklySummary: { fontSize: 12, color: "#444", marginTop: 6 },
+  eventsTitleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 10,
+  },
+  eventsLinkBtn: {
+    backgroundColor: "#0f172a",
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  eventsLinkText: { color: "#fff", fontWeight: "800", fontSize: 12 },
+  eventRow: {
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    padding: 10,
+    gap: 4,
+  },
+  eventTitle: { fontSize: 12, fontWeight: "800", color: "#0f172a" },
+  eventSubject: { fontSize: 12, color: "#334155" },
+  eventMeta: { fontSize: 11, color: "#64748b" },
   disclaimer: { marginTop: 24, fontSize: 12, color: "#666" },
 });
