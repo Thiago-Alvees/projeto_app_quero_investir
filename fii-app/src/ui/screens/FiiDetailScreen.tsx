@@ -3,9 +3,6 @@ import {
   ActivityIndicator,
   Alert,
   Pressable,
-  ScrollView,
-  StyleSheet,
-  Switch,
   Text,
   TextInput,
   View,
@@ -28,14 +25,12 @@ import {
   getValuationStatus,
 } from "../../domain/rules/valuation";
 import { buildFiiScore } from "../../domain/rules/investmentInsights";
-import {
-  simulateFiiRecurringContribution,
-  simulateRecurringContribution,
-} from "../../domain/rules/simulator";
 import { useFiiDetail } from "../hooks/useFiiDetail";
-import { useReferenceRates } from "../hooks/useReferenceRates";
 import { formatCurrencyBRL, formatDecimalBR } from "../utils/format";
 import { normalizeUtf8Text } from "../utils/text";
+import AssetDetailLayout from "../components/asset-detail/AssetDetailLayout";
+import AssetSimulationComparison from "../components/asset-detail/AssetSimulationComparison";
+import { assetDetailStyles as styles } from "../components/asset-detail/styles";
 
 type Props = NativeStackScreenProps<RootStackParamList, "FiiDetail">;
 
@@ -89,13 +84,9 @@ function buildWeeklySummary(history: FiiHistoryPoint[]): string {
 export default function FiiDetailScreen({ route }: Props) {
   const { fii, updatedAt, fundamentalsUpdatedAt } = route.params;
   const { detail, loading: detailLoading, error: detailError } = useFiiDetail(fii.ticker);
-  const { rates, loading: ratesLoading } = useReferenceRates();
 
   const [isFavorite, setIsFavorite] = useState(false);
   const [favoriteLoading, setFavoriteLoading] = useState(false);
-  const [monthlyContributionInput, setMonthlyContributionInput] = useState("500");
-  const [monthsInput, setMonthsInput] = useState("24");
-  const [reinvestDividends, setReinvestDividends] = useState(true);
   const [alertPriceInput, setAlertPriceInput] = useState("");
   const [alertDyInput, setAlertDyInput] = useState("");
   const [alertLoading, setAlertLoading] = useState(false);
@@ -185,12 +176,6 @@ export default function FiiDetailScreen({ route }: Props) {
       ? "em apuração"
       : `${formatDecimalBR(fii.dividendYield12m, 1)}%`;
 
-  const fiiSimulationUnavailableReason = !hasDy
-    ? "o DY estiver em apuração"
-    : !hasPrice
-      ? "a cotação estiver indisponível"
-      : "faltarem dados para simular";
-
   const priceUpdatedLabel = formatDateLabel(updatedAt);
   const fundamentalsUpdatedLabel = formatDateLabel(fundamentalsUpdatedAt);
 
@@ -199,98 +184,24 @@ export default function FiiDetailScreen({ route }: Props) {
     return buildWeeklySummary(detailData.history);
   }, [detailData.history]);
 
-  const simulation = useMemo(() => {
-    const monthlyContribution = parseNumberInput(monthlyContributionInput);
-    const months = parseNumberInput(monthsInput);
-
-    if (
-      monthlyContribution === null ||
-      monthlyContribution <= 0 ||
-      months === null ||
-      months <= 0 ||
-      !rates
-    ) {
-      return null;
-    }
-
-    const fiiProjection = hasDy
-      ? simulateFiiRecurringContribution({
-          monthlyContribution,
-          months,
-          price: fii.price,
-          dyAnnual: fii.dividendYield12m,
-          reinvestDividends,
-        })
-      : null;
-
-    const savingsProjection = simulateRecurringContribution({
-      monthlyContribution,
-      months,
-      annualRate: rates.savingsAnnual,
-    });
-
-    const fixedIncomeProjection = simulateRecurringContribution({
-      monthlyContribution,
-      months,
-      annualRate: rates.fixedIncomeAnnual,
-    });
-
-    return {
-      monthlyContribution,
-      months: Math.max(1, Math.floor(months)),
-      fiiProjection,
-      savingsProjection,
-      fixedIncomeProjection,
-    };
-  }, [
-    monthlyContributionInput,
-    monthsInput,
-    hasDy,
-    fii.price,
-    fii.dividendYield12m,
-    reinvestDividends,
-    rates,
-  ]);
+  const metaLines: string[] = [];
+  if (priceUpdatedLabel) metaLines.push(`Preço atualizado em: ${priceUpdatedLabel}`);
+  if (fundamentalsUpdatedLabel) {
+    metaLines.push(`Fundamentos atualizados em: ${fundamentalsUpdatedLabel}`);
+  }
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <View style={styles.headerRow}>
-        <Text style={styles.ticker}>{fii.ticker}</Text>
-        <Pressable onPress={handleToggleFavorite} disabled={favoriteLoading} style={styles.starBtn}>
-          <Text style={[styles.star, isFavorite && styles.starActive]}>
-            {favoriteLoading ? "..." : isFavorite ? "★" : "☆"}
-          </Text>
-        </Pressable>
-      </View>
-
-      <Text style={styles.price}>
-        {hasPrice ? formatCurrencyBRL(fii.price) : "Preço indisponível"}
-      </Text>
-
-      {priceUpdatedLabel || fundamentalsUpdatedLabel ? (
-        <View style={styles.metaBox}>
-          {priceUpdatedLabel ? (
-            <Text style={styles.metaLine}>Preço atualizado em: {priceUpdatedLabel}</Text>
-          ) : null}
-          {fundamentalsUpdatedLabel ? (
-            <Text style={styles.metaLine}>Fundamentos atualizados em: {fundamentalsUpdatedLabel}</Text>
-          ) : null}
-        </View>
-      ) : null}
-
-      <Text style={styles.status}>{status}</Text>
-      <Text style={styles.message}>{valuationMessage}</Text>
-
-      <View style={styles.scoreCard}>
-        <Text style={styles.scoreTitle}>Score didático: {fiiScore.score}/100</Text>
-        <Text style={styles.scoreLabel}>{fiiScore.label}</Text>
-        {fiiScore.reasons.map((reason) => (
-          <Text key={reason} style={styles.scoreReason}>
-            • {reason}
-          </Text>
-        ))}
-      </View>
-
+    <AssetDetailLayout
+      ticker={fii.ticker}
+      isFavorite={isFavorite}
+      favoriteLoading={favoriteLoading}
+      onToggleFavorite={handleToggleFavorite}
+      priceLabel={hasPrice ? formatCurrencyBRL(fii.price) : "Preço indisponível"}
+      metaLines={metaLines}
+      statusLabel={status}
+      message={valuationMessage}
+      scoreCard={fiiScore}
+    >
       <View style={styles.block}>
         <Text style={styles.kpi}>Tipo: {fii.type}</Text>
         <Text style={styles.kpi}>P/VP: {hasPvp ? formatDecimalBR(pvp, 2) : "indisponível"}</Text>
@@ -440,233 +351,17 @@ export default function FiiDetailScreen({ route }: Props) {
         </View>
       </View>
 
-      <View style={styles.block}>
-        <Text style={styles.sectionTitle}>Simulador e comparativo</Text>
-        <Text style={styles.simHint}>
-          Informe apenas seu aporte mensal e o tempo. O DY deste fundo é usado automaticamente.
-        </Text>
-
-        <TextInput
-          value={monthlyContributionInput}
-          onChangeText={setMonthlyContributionInput}
-          keyboardType="numeric"
-          placeholder="Aporte mensal (R$)"
-          style={styles.input}
-        />
-
-        <TextInput
-          value={monthsInput}
-          onChangeText={setMonthsInput}
-          keyboardType="numeric"
-          placeholder="Tempo (meses)"
-          style={styles.input}
-        />
-
-        <View style={styles.switchRow}>
-          <Text style={styles.switchLabel}>Reinvestir dividendos automaticamente</Text>
-          <Switch
-            value={reinvestDividends}
-            onValueChange={setReinvestDividends}
-            trackColor={{ false: "#ccc", true: "#0a7a0a" }}
-          />
-        </View>
-
-        {rates ? (
-          <Text style={styles.rateInfo}>
-            Taxas de referência: Poupança {formatDecimalBR(rates.savingsAnnual, 2)}% a.a. |
-            {` ${normalizeUtf8Text(rates.fixedIncomeLabel)} ${formatDecimalBR(
-              rates.fixedIncomeAnnual,
-              2
-            )}% a.a.`}
-          </Text>
-        ) : null}
-
-        {rates && rates.source === "BCB" ? (
-          <Text style={styles.rateInfo}>
-            Fonte BCB: poupança {rates.savingsDate ?? "-"} | CDI {rates.fixedIncomeDate ?? "-"}
-          </Text>
-        ) : null}
-
-        {ratesLoading ? <Text style={styles.rateInfo}>Atualizando taxas de mercado...</Text> : null}
-
-        {!simulation ? (
-          <Text style={styles.kpiMuted}>Preencha aporte mensal e tempo para calcular.</Text>
-        ) : (
-          <View style={styles.resultGroup}>
-            <Text style={styles.simSummary}>
-              Simulando {formatCurrencyBRL(simulation.monthlyContribution)} por mês durante{" "}
-              {simulation.months} meses:
-            </Text>
-
-            {simulation.fiiProjection ? (
-              <View style={styles.resultBox}>
-                <Text style={styles.resultTitle}>FII {fii.ticker}</Text>
-                <Text style={styles.resultLine}>
-                  Valor final estimado: {formatCurrencyBRL(simulation.fiiProjection.finalValue)}
-                </Text>
-                <Text style={styles.resultLine}>
-                  Rendimento estimado: {formatCurrencyBRL(simulation.fiiProjection.totalGain)}
-                </Text>
-                <Text style={styles.resultLine}>
-                  Renda mensal estimada ao final:{" "}
-                  {formatCurrencyBRL(simulation.fiiProjection.monthlyIncome)}
-                </Text>
-              </View>
-            ) : (
-              <View style={styles.resultBox}>
-                <Text style={styles.resultTitle}>FII {fii.ticker}</Text>
-                <Text style={styles.resultLine}>
-                  Simulação indisponível enquanto {fiiSimulationUnavailableReason}.
-                </Text>
-              </View>
-            )}
-
-            {simulation.savingsProjection ? (
-              <View style={styles.resultBoxAlt}>
-                <Text style={styles.resultTitle}>Poupança</Text>
-                <Text style={styles.resultLine}>
-                  Valor final estimado: {formatCurrencyBRL(simulation.savingsProjection.finalValue)}
-                </Text>
-                <Text style={styles.resultLine}>
-                  Rendimento estimado: {formatCurrencyBRL(simulation.savingsProjection.totalGain)}
-                </Text>
-                <Text style={styles.resultLine}>
-                  Renda mensal estimada ao final:{" "}
-                  {formatCurrencyBRL(simulation.savingsProjection.monthlyIncomeAtEnd)}
-                </Text>
-              </View>
-            ) : null}
-
-            {simulation.fixedIncomeProjection ? (
-              <View style={styles.resultBoxAlt}>
-                <Text style={styles.resultTitle}>
-                  {normalizeUtf8Text(rates?.fixedIncomeLabel ?? "Renda fixa")}
-                </Text>
-                <Text style={styles.resultLine}>
-                  Valor final estimado:{" "}
-                  {formatCurrencyBRL(simulation.fixedIncomeProjection.finalValue)}
-                </Text>
-                <Text style={styles.resultLine}>
-                  Rendimento estimado:{" "}
-                  {formatCurrencyBRL(simulation.fixedIncomeProjection.totalGain)}
-                </Text>
-                <Text style={styles.resultLine}>
-                  Renda mensal estimada ao final:{" "}
-                  {formatCurrencyBRL(simulation.fixedIncomeProjection.monthlyIncomeAtEnd)}
-                </Text>
-              </View>
-            ) : null}
-
-            <Text style={styles.simDisclaimer}>
-              Comparativo educativo. Não considera impostos, taxas, vacância ou variação real do
-              mercado.
-            </Text>
-          </View>
-        )}
-      </View>
+      <AssetSimulationComparison
+        assetLabel={`FII ${fii.ticker}`}
+        hint="Informe apenas seu aporte mensal e o tempo. O DY deste fundo é usado automaticamente."
+        price={fii.price}
+        dividendYield12m={fii.dividendYield12m}
+        dyStatus={fii.dyStatus ?? "APURACAO"}
+      />
 
       <Text style={styles.disclaimer}>
         Conteúdo educacional. Não é recomendação de investimento.
       </Text>
-    </ScrollView>
+    </AssetDetailLayout>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flexGrow: 1, padding: 16, backgroundColor: "#fff" },
-  headerRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  ticker: { fontSize: 26, fontWeight: "800" },
-  starBtn: { padding: 6, marginRight: -4 },
-  star: { fontSize: 22, color: "#999" },
-  starActive: { color: "#f2b400" },
-  price: { fontSize: 18, marginTop: 6 },
-  metaBox: {
-    marginTop: 12,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: "#e6e6e6",
-    backgroundColor: "#fafafa",
-    gap: 4,
-  },
-  metaLine: { fontSize: 12, color: "#555" },
-  status: { fontSize: 16, fontWeight: "700", marginTop: 14 },
-  message: { fontSize: 14, marginTop: 6, marginBottom: 12 },
-  scoreCard: {
-    borderWidth: 1,
-    borderColor: "#dbeafe",
-    backgroundColor: "#f0f7ff",
-    borderRadius: 12,
-    padding: 12,
-    gap: 6,
-  },
-  scoreTitle: { fontSize: 14, fontWeight: "800", color: "#1d4ed8" },
-  scoreLabel: { fontSize: 12, fontWeight: "700", color: "#1f2937" },
-  scoreReason: { fontSize: 12, color: "#374151" },
-  block: { gap: 8, marginTop: 16 },
-  sectionTitle: { fontSize: 16, fontWeight: "700", marginBottom: 4 },
-  kpi: { fontSize: 14, color: "#111" },
-  kpiMuted: { fontSize: 14, color: "#777" },
-  paragraph: { fontSize: 13, color: "#333", lineHeight: 18 },
-  helper: { fontSize: 12, color: "#666" },
-  inlineRow: { flexDirection: "row", alignItems: "center", gap: 8 },
-  weeklySummary: { fontSize: 12, color: "#444", marginTop: 6 },
-  simHint: { fontSize: 12, color: "#555" },
-  input: {
-    borderWidth: 1,
-    borderColor: "#ddd",
-    borderRadius: 10,
-    paddingVertical: 8,
-    paddingHorizontal: 10,
-    backgroundColor: "#fff",
-  },
-  alertActions: { flexDirection: "row", gap: 8 },
-  alertPrimary: {
-    flex: 1,
-    borderRadius: 10,
-    backgroundColor: "#111827",
-    alignItems: "center",
-    paddingVertical: 10,
-  },
-  alertPrimaryText: { color: "#fff", fontWeight: "700", fontSize: 12 },
-  alertSecondary: {
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: "#b91c1c",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: 12,
-  },
-  alertSecondaryText: { color: "#b91c1c", fontWeight: "700", fontSize: 12 },
-  switchRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    gap: 8,
-  },
-  switchLabel: { fontSize: 13, color: "#333", flex: 1, paddingRight: 8 },
-  rateInfo: { fontSize: 12, color: "#555" },
-  resultGroup: { gap: 10 },
-  simSummary: { fontSize: 13, color: "#333", fontWeight: "700" },
-  resultBox: {
-    borderWidth: 1,
-    borderColor: "#d9e8ff",
-    backgroundColor: "#f3f8ff",
-    borderRadius: 10,
-    padding: 10,
-    gap: 6,
-  },
-  resultBoxAlt: {
-    borderWidth: 1,
-    borderColor: "#e3e3e3",
-    backgroundColor: "#fafafa",
-    borderRadius: 10,
-    padding: 10,
-    gap: 6,
-  },
-  resultTitle: { fontSize: 13, fontWeight: "700", color: "#111" },
-  resultLine: { fontSize: 13, color: "#111" },
-  simDisclaimer: { fontSize: 12, color: "#666" },
-  disclaimer: { marginTop: 24, fontSize: 12, color: "#666" },
-});
