@@ -8,7 +8,7 @@ import {
   SNAPSHOT_URL,
   getLocalFundamentals,
 } from "./config";
-import { readCache, writeCache } from "./cache";
+import { readCache, readCacheAnyAge, writeCache } from "./cache";
 import type { FiiListCache, Fundamentals, Result, Snapshot } from "./types";
 import { normalizeDyStatus, toNumber, toUpper } from "./utils";
 
@@ -19,16 +19,24 @@ type NormalizedFundamental = {
   pl?: number;
 };
 
-async function fetchSnapshot(): Promise<Snapshot> {
-  const response = await fetch(SNAPSHOT_URL);
+async function fetchSnapshot(force: boolean): Promise<Snapshot> {
+  const url = force ? `${SNAPSHOT_URL}?t=${Date.now()}` : SNAPSHOT_URL;
+  const response = await fetch(
+    url,
+    force ? { headers: { "Cache-Control": "no-cache" } } : undefined
+  );
   if (!response.ok) throw new Error(`HTTP ${response.status}`);
   const json = (await response.json()) as Snapshot;
   if (!json || !Array.isArray(json.items)) throw new Error("Snapshot inválido.");
   return json;
 }
 
-async function fetchFundamentals(): Promise<Fundamentals> {
-  const response = await fetch(FUNDAMENTALS_URL);
+async function fetchFundamentals(force: boolean): Promise<Fundamentals> {
+  const url = force ? `${FUNDAMENTALS_URL}?t=${Date.now()}` : FUNDAMENTALS_URL;
+  const response = await fetch(
+    url,
+    force ? { headers: { "Cache-Control": "no-cache" } } : undefined
+  );
   if (!response.ok) throw new Error(`HTTP ${response.status}`);
   const json = (await response.json()) as Fundamentals;
   if (!json || !Array.isArray(json.items)) throw new Error("Fundamentos inválidos.");
@@ -154,6 +162,8 @@ export async function getFiiList(options: { force: boolean }): Promise<Result<Fi
     };
   }
 
+  const cachedAnyAge = await readCacheAnyAge<FiiListCache>(LIST_CACHE_KEY);
+
   try {
     const mockMap = new Map<string, Fii>();
     for (const mock of FIIS_MOCK) {
@@ -165,7 +175,7 @@ export async function getFiiList(options: { force: boolean }): Promise<Result<Fi
     const priceMap = new Map<string, number>();
 
     try {
-      const snapshot = await fetchSnapshot();
+      const snapshot = await fetchSnapshot(options.force);
       updatedAt = snapshot.generatedAt ?? null;
       for (const item of snapshot.items) {
         const ticker = toUpper(item.ticker);
@@ -176,12 +186,28 @@ export async function getFiiList(options: { force: boolean }): Promise<Result<Fi
       }
       source = "SNAPSHOT";
     } catch (error) {
-      if (__DEV__) console.log("[snapshot] fallback para mock:", String(error));
+      if (__DEV__) console.log("[snapshot] remoto indisponÃ­vel, tentando cache:", String(error));
+
+      if (cachedAnyAge?.source === "SNAPSHOT" && Array.isArray(cachedAnyAge.data)) {
+        for (const fii of cachedAnyAge.data) {
+          const ticker = toUpper(fii.ticker);
+          const price = toValidPositiveNumber(fii.price);
+          if (price !== undefined) {
+            priceMap.set(ticker, price);
+          }
+        }
+
+        if (priceMap.size > 0) {
+          source = "SNAPSHOT";
+          updatedAt = cachedAnyAge.updatedAt ?? null;
+          if (__DEV__) console.log("[snapshot] usando cache antigo para evitar MOCK.");
+        }
+      }
     }
 
     let fundamentals: Fundamentals | null = null;
     try {
-      fundamentals = await fetchFundamentals();
+      fundamentals = await fetchFundamentals(options.force);
     } catch (error) {
       if (__DEV__) console.log("[fundamentals] remoto indisponível:", String(error));
     }
