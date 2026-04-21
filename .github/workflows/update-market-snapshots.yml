@@ -28,18 +28,22 @@ jobs:
           node scripts/update_snapshot.mjs
 
       - name: Generate market quote snapshot
+        if: ${{ github.event_name == 'workflow_dispatch' }}
         env:
           BRAPI_TOKEN: ${{ secrets.BRAPI_TOKEN }}
         run: |
           node scripts/update_market_snapshot.mjs
 
-      - name: Generate market fundamentals snapshot
+      - name: Generate market quote snapshot (sharded)
+        if: ${{ github.event_name == 'schedule' }}
         env:
           BRAPI_TOKEN: ${{ secrets.BRAPI_TOKEN }}
+          MARKET_SNAPSHOT_SHARDS: "3"
         run: |
-          node scripts/update_market_fundamentals.mjs
+          node scripts/update_market_snapshot.mjs
 
       - name: Generate events feed (CVM IPE)
+        continue-on-error: true
         run: |
           node scripts/update_events_feed.mjs
 
@@ -55,14 +59,14 @@ jobs:
           mkdir -p snapshot-repo/data
           cp data/fiis_snapshot.json snapshot-repo/data/fiis_snapshot.json
           cp data/market_snapshot.json snapshot-repo/data/market_snapshot.json
-          cp data/market_fundamentals.json snapshot-repo/data/market_fundamentals.json
-          cp data/events_feed.json snapshot-repo/data/events_feed.json
+          if [ -f data/events_feed.json ]; then cp data/events_feed.json snapshot-repo/data/events_feed.json; fi
 
       - name: Commit and push to public repo
         run: |
           cd snapshot-repo
           git config user.name "snapshot-bot"
           git config user.email "snapshot-bot@users.noreply.github.com"
-          git add data/fiis_snapshot.json data/market_snapshot.json data/market_fundamentals.json data/events_feed.json
+          git add data/fiis_snapshot.json data/market_snapshot.json
+          if [ -f data/events_feed.json ]; then git add data/events_feed.json; fi
           git diff --cached --quiet || git commit -m "chore(snapshot): update market data"
           git push
