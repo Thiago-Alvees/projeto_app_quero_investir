@@ -152,7 +152,8 @@ export async function getFiiList(options: { force: boolean }): Promise<Result<Fi
     ? null
     : await readCache<FiiListCache>(LIST_CACHE_KEY, CACHE_TTL_LIST_MS);
 
-  if (cached) {
+  // Only trust cached SNAPSHOT data. Cached MOCK data can "stick" after a temporary outage.
+  if (cached && cached.source !== "MOCK") {
     return {
       ok: true,
       data: cached.data,
@@ -235,7 +236,11 @@ export async function getFiiList(options: { force: boolean }): Promise<Result<Fi
       fundamentalsUpdatedAt: normalizedFundamentals.updatedAt,
     };
 
-    await writeCache(LIST_CACHE_KEY, result);
+    const hasSnapshotCache = cachedAnyAge?.source === "SNAPSHOT" && cachedAnyAge.data?.length;
+    const shouldWriteCache = source === "SNAPSHOT" || !hasSnapshotCache;
+    if (shouldWriteCache) {
+      await writeCache(LIST_CACHE_KEY, result);
+    }
 
     return {
       ok: true,

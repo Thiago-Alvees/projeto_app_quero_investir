@@ -34,6 +34,8 @@ jobs:
           node scripts/update_market_snapshot.mjs
 
       - name: Generate market fundamentals snapshot
+        env:
+          BRAPI_TOKEN: ${{ secrets.BRAPI_TOKEN }}
         run: |
           node scripts/update_market_fundamentals.mjs
 
